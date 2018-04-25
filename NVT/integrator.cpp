@@ -83,8 +83,8 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
         if((n_step > 0) && ((n_step % i_adjust)== 0)){
             if(((float)n_good/(n_good+n_bad)) < 0.3) dl_max /= 3.9;
             if(((float)n_good/(n_good+n_bad)) > 0.7) dl_max *= 3.0;
-            dl_max = min( dl_max, the_state->x_size);
-            dl_max = min( dl_max, the_state->y_size);
+            dl_max = simple_min( dl_max, the_state->x_size);
+            dl_max = simple_min( dl_max, the_state->y_size);
             n_good = n_bad = 0;
         }
 
@@ -102,7 +102,7 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
         dU = new_state->energy(the_forces)
                 - the_state->energy(the_forces);
         prob_new = exp(- beta * dU );
-        prob_new = min(1.0,prob_new);
+        prob_new = simple_min(1.0,prob_new);
 
         /* Accept or reject the new state according to the probability     */
         if(rnd_lin(1.0)<= prob_new ){

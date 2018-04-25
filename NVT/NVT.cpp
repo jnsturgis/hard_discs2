@@ -102,8 +102,15 @@
  */
 
 #include <cstdlib>
+#include <iostream>
 #include "integrator.h"
 #include "common.h"
+
+// program_options, to parse arguments
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
+
+using boost::format;
 
 using namespace std;
 
@@ -122,21 +129,23 @@ void usage(){
  *
  */
 int main(int argc, char** argv) {
-    char        *fname;
+    
+    // Use c++ string
+    string       in_name;
+    string       out_name;
+    
+    // Objects in headers
     config      *current_state;
     config      **state_h;
     force_field *the_forces = new force_field(); // This memory is lost
     integrator  *the_integrator = NULL;
     topology    *a_topology;
 
-    FILE        *src1;
-    FILE        *dest1;
-    FILE        *the_log;
-
     int         N1;
     double      U1, V1;
     int         i, step;
 
+    // Barbaric hard-coded defaults
     int         it_max  =  10000;
     int         n_print =   1000;
     double      beta    =    1.0;
@@ -146,47 +155,53 @@ int main(int argc, char** argv) {
     // Initialization
 
     srand((long)&argv[0]);
-    the_log = stderr;
 
     // Handle command line
+    // Try with boost's program_options
+    namespace po = boost::program_options;
+    po::options_description desc("Generic options");
+    desc.add_options()
+        ("help", "Produce help message")
+        // It seems easy to simply store things in variables
+        ("nsteps,n", po::value<int>(&it_max), "Number of steps (default 10000)")
+        ("pfreq,pf", po::value<int>(&n_print), "Print frequency (default 1000)")
+        ("beta,b", po::value<double>(&beta), "Beta (default 1)")
+        ("pressure,pr", po::value<double>(&P1), "Pressure (default 1)")
+        ("initial,c", po::value<string>(&in_name)->required(), "Initial configuration (input)")
+        ("final,o", po::value<string>(&out_name)->required(), "Final configuration (output)")
+    ;
 
-    /***************************************************************************
-     *  TODO: Reorganize command line handling to allow 'flag value' syntax
-     *        with defaults.
-     **************************************************************************/
-    if(argc != 7){
-        fatal_error("Wrong number of arguments: %d but expected 6\n", argc-1);
+    // Store arguments
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    
+    // Print the help if needed
+    if (vm.count("help")) {
+        cout << desc << "\n";
+        return 1;        
     }
-    ++argv;
-    it_max = atoi(*argv);
-    if (it_max<1) fatal_error("Too few iterations: %d\n", it_max);
-
-    ++argv;
-    n_print = atoi(*argv);
-
-    ++argv;
-    beta = atof(*argv);
-
-    ++argv;
-    P1 = atof(*argv);
-
-    ++argv;
-    fname = *argv;
-    if(! (src1 = fopen(fname, "r")))
-        fatal_error("Unable to open %s for reading\n", fname );
-
-    ++argv;
-    fname = *argv;
-    if(! (dest1 = fopen(fname, "w")))
-        fatal_error("Unable to open %s for writing\n", fname );
-
-    the_log = stdout;
+    
+    po::notify(vm);
+    
+    // Get the two file names
+    if (vm.count("initial")) {
+        cout << "Configuration file: " << in_name << "\n";
+    }
+    
+    if (vm.count("final")) {
+        cout << "Output configuration file: " << out_name << "\n";
+    }
 
     a_topology = new topology();    // Create or load the object topologies
 
     // Load the initial configuration
-    current_state = new config(src1);
-                                    // Add the topology to the configuration.
+    /* On catching exceptions from constructors
+     * After some reading, it doesn't seem like we need to handle
+     * exceptions (try/catch block) if we don't need to propagate 
+     * an exception from another constructed member within that constructor
+     * So, keep it that way */
+    current_state = new config(in_name);
+    // Add the topology to the configuration.
     current_state->add_topology(a_topology);
 
     U1 = current_state->energy(the_forces);
@@ -194,13 +209,11 @@ int main(int argc, char** argv) {
     N1 = current_state->n_objects();
 
     // Print report of state
-    fprintf( the_log, "Configuration loaded\n");
-    fprintf( the_log, "N objects = %9d Pressure = %9g   Beta = %9g\n",
-            N1, P1, beta);
-    fprintf( the_log, "Area      = %9g  Density = %9g Energy = %9g\n",
-            V1, N1/V1, U1);
+    cout << "Configuration loaded\n";
+    cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+    cout << format("Area      = %9g  Density = %9g Energy = %9g\n") % V1 % (N1/V1) % U1;
 
-    dl_max = min(current_state->x_size, current_state->y_size)/2.0;
+    dl_max = simple_min(current_state->x_size, current_state->y_size)/2.0;
 
     // Jiggle everything to remove bad contacts from save/load
 
@@ -225,15 +238,13 @@ int main(int argc, char** argv) {
     if( the_integrator ){
         delete the_integrator;
         i = 0;
-        fprintf( the_log, "After initial adjustments:\n");
-        fprintf( the_log, "N objects = %9d Pressure = %9g   Beta = %9g\n",
-            N1, P1, beta);
-        fprintf( the_log, "Area      = %9g  Density = %9g Energy = %9g\n",
-            V1, N1/V1, U1);
+        cout << "After initial adjustments:\n";
+        cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+        cout << format("Area      = %9g  Density = %9g Energy = %9g\n") % V1 % (N1/V1) % U1;
     }
 
     // Start NVT montecarlo loop
-    step = min(n_print,it_max);
+    step = simple_min(n_print,it_max);
     the_integrator = new integrator(the_forces);
     the_integrator->dl_max = dl_max;
 
@@ -246,27 +257,26 @@ int main(int argc, char** argv) {
         V1 = current_state->area();
         N1 = current_state->n_objects();
 
-        fprintf(the_log, "After %d steps N = %d, P = %g, beta = %g\n",
-                i+step, N1, P1, beta );
-        fprintf(the_log, "Area = %g, Density = %g Energy = %g\n",
-                V1, N1/V1, U1);
-        fprintf(the_log, "Moves %d in %d, Dist_max = %g\n",
-                the_integrator->n_good,
-                the_integrator->n_good + the_integrator->n_bad,
-                the_integrator->dl_max );
+        cout << format("After %d steps N = %d, P = %g, beta = %g\n") 
+                % (i+step) % N1 % P1 % beta;
+        cout << format("Area = %g, Density = %g Energy = %g\n") 
+                % V1 % (N1/V1) % U1;
+        cout << format("Moves %d in %d, Dist_max = %g\n") 
+                % (the_integrator->n_good)
+                % (the_integrator->n_good + the_integrator->n_bad)
+                % (the_integrator->dl_max);
 
-        step = min(step,it_max-i);
+        step = simple_min(step,it_max-i);
     }
     delete the_integrator;
     // Update log
     // Save result
-    current_state->write(dest1);
+    current_state->write(out_name);
     // Clean up
     delete current_state;
     delete the_forces;
 
-    fprintf(the_log, "\n...Done...\n");
-    fclose(the_log);
+    cout << "\n...Done...\n";
 
     return 0;
 }

@@ -76,6 +76,7 @@
 #define CONFIG_H
 
 #include "o_list.h"
+#include <string>
 
 using namespace std;
 
@@ -84,14 +85,15 @@ public:
     config();                       ///< Create a new empty conformation.
     config(config& orig);           ///< Copy an existing conformation.
     config(config *orig);           ///< Copy an existing conformation from a pointer.
-    config(FILE *src);              ///< Create a conformation from a file.
+    config(std::string in_file);        ///< Create a conformation from a file.
     virtual ~config();              ///< Destroy a conformation
 
     void    add_topology(topology *a_topology); ///< Attach a topology to the configuration
     void    add_object(object *orig); ///< Insert the object orig into the configuration
-    int     write( FILE* dest );    ///< Write the conformation to the dest file
-    void    ps_atoms(force_field *the_forces, FILE *dest);   ///< Write the postscript part for the atoms.
-    void    ps_box(FILE *dest);     ///< Write postscript path for the bounding box.
+    int     write(std::string out_file );    ///< Write the conformation to the dest file
+    void    ps_atoms(force_field *the_forces, std::ofstream& _out);   ///< Write the postscript part for the atoms.
+    //~ void    ps_box(FILE *dest);     ///< Write postscript path for the bounding box.
+    //~ void     ps_box(std::ofstream& _out);     ///< Write postscript path for the bounding box.
 
     double  energy(force_field *& the_force);   ///< Calculate the energy of a conformation using a force field.
     double  area();                 ///< The total area of the configuation.

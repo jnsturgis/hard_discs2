@@ -7,8 +7,14 @@
 
 #include <float.h>
 #include <math.h>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include "config.h"
 #include "common.h"
+#include <boost/format.hpp>
+
+using boost::format;
 
 /**
  * Constructor that produces an empty basic configuration. This is not
@@ -47,26 +53,62 @@ config::config() {
  * @todo        Integrate an object constructor from a file saves 4 variables
  *              and a couple of lines of code.
  */
-config::config(FILE *src) {
-    int     n_obj;
-    int     o_type,
-            i;
-    double  x_pos, y_pos, angle;
-    object  *my_obj;
 
-    fscanf(src,"%lf %lf\n", &x_size, &y_size);      // Read the configuration size.
-    fscanf(src,"%d\n", &n_obj );                    // Read the number of objects
-                                                    // in the configuration.
-    obj_list = o_list();                            // Make a new obj_list (is this
-                                                    // necessary?)
-    for(i=0; i<n_obj; i++ ){                        // Loop over the objects.
-                                                    // These 2 lines should really
-                                                    // Use an object constructor.
-        fscanf(src, "%d %lf %lf %lf\n", &o_type, &x_pos, &y_pos, &angle );
+config::config(string in_file) {
+    int         n_obj;
+    int         o_type;
+    double      x_pos, y_pos, angle;
+    object      *my_obj;
+    // Plus a string for each line
+    string      line;
+    
+    // Open a stream of the file
+    ifstream ff(in_file.c_str());
+    
+    // We get each line with getline(in_file, line)
+    // Here we want stuff from the first two lines so
+    // Get the line
+    getline(ff, line);
+    istringstream iss(line);
+    
+    // From this, populate other variables - x_size and y_size are doubles
+    // Can also check if the line has the right number of fields
+    if (!(iss >> x_size >> y_size)) {
+        throw range_error("First line of the configuration file should be x_size y_size, exiting ...\n");
+    }
+    
+    // Clear iss
+    iss.clear();
+    
+    // Next line
+    getline(ff, line);
+    iss.str(line);
+    if (!(iss >> n_obj)) {
+        throw range_error("Second line of the configuration file should be the number of objects, exiting ...\n");
+    }
+    
+    // Clear iss again
+    iss.clear();
+    
+    // Now loop through the remaining lines
+    while (getline(ff, line)) {
+        
+        // The line
+        iss.str(line);
+        
+        // Bead type, x, y and angle at each line
+        if (!(iss >> o_type >> x_pos >> y_pos >> angle)) {
+            throw range_error("Problem in the coordinates, exiting ...\n");
+        }
+        
+        // Populate a new object and add it to the list
         my_obj = new object(o_type, x_pos, y_pos, angle );
-        obj_list.add(my_obj);                       // Add the new object to the list.
-    }                                               // End of loop over objects.
-
+        obj_list.add(my_obj); 
+        
+        // Clear iss
+        iss.clear();
+    }
+    
     unchanged = false;                              // Set up so will calculate energy.
     saved_energy = 0.0;
     the_topology = (topology *)NULL;                // Topologies are not included in
@@ -74,7 +116,7 @@ config::config(FILE *src) {
     is_periodic = true;                             // This should be read from file.
 
     assert(n_obj == n_objects() );                  // Should check the configuration
-                                                    // is alright.
+                                                    //~ // is alright.
 }
 
 /**
@@ -193,15 +235,28 @@ double config::energy(force_field *&the_force) {
  * @todo        Incorporate error handling and exit status return that is
  *              correct.
  */
-int config::write(FILE *dest ){
+
+int config::write(string out_file ){
     int     i;
     object  *this_obj;
-                                            // Write header with bounding box
-    fprintf(dest, "%9f2 %9f2 \n", x_size, y_size );
-    fprintf(dest, "%d\n", obj_list.size() );// And then the number of objects
+    
+    // Open a stream to write the output
+    ofstream _out(out_file.c_str());
+    
+    // Check if we could open it
+    if(!_out) {
+        cout << "Cannot open file " << out_file << ", exiting ...\n";
+        return 1;
+    }
+    
+    // Now put the header and number of objects inside
+    // Using boost for formatting, which seems the proper way in c++
+    _out << format("%9f2 %9f2 \n") % x_size % y_size;
+    _out << format("%d\n") % obj_list.size();
+
     for(i = 0; i< obj_list.size(); i++){    // For each object in configuration
         this_obj = obj_list.get(i);         // Get the object and
-        this_obj->write(dest);              // Write it to the file
+        this_obj->write(_out);              // Write it to the file -- Pass the stream
     }
     return EXIT_SUCCESS;                    // Return all well
 }
@@ -228,7 +283,7 @@ int config::object_types(){
     assert( check() );
 
     for(i = 0; i< obj_list.size(); i++ ){
-        max_type = max(max_type, obj_list.get(i)->o_type);
+        max_type = simple_max(max_type, obj_list.get(i)->o_type);
     }
     assert(max_type>=0);
 //  assert( check() );
@@ -367,7 +422,7 @@ void    config::add_object(object* orig ){
  * \todo use return value for error handling.
  */
 
-void    config::ps_atoms(force_field* the_forces, FILE* dest){
+void    config::ps_atoms(force_field* the_forces, std::ofstream& _out){
     object  *my_obj;
     double  theta, dx, dy, r, x, y;
     int     t, lr, tb;
@@ -386,8 +441,8 @@ void    config::ps_atoms(force_field* the_forces, FILE* dest){
             x  =  my_obj->pos_x + dx * cos(theta) - dy * sin(theta);
             y  =  my_obj->pos_y + dx * sin(theta) + dy * cos(theta);
                                             // Write postscript snippet for atom.
-            fprintf(dest, "newpath %g %g %g %s moveto fcircle \n",
-                    r, x, y, the_forces->get_color(t) );
+            _out << format("newpath %g %g %g %s moveto fcircle \n") 
+                    % r % x % y % (the_forces->get_color(t) );
 
                                             // Handle intersections with the border
             lr = 0; tb = 0;                 // need up to 4 copies.
@@ -396,18 +451,17 @@ void    config::ps_atoms(force_field* the_forces, FILE* dest){
             if ( y < r ) tb = -1;
             if ( y > y_size - r ) tb = +1;
             if (lr != 0 ){                  // Copy on other side
-	            fprintf(dest, "newpath %g %g %g %s moveto fcircle \n",
-                    r, lr*x-lr*x_size, y, the_forces->get_color(t) );
+                _out << format("newpath %g %g %g %s moveto fcircle \n")
+                    % r % (lr*x-lr*x_size) % y % (the_forces->get_color(t) );
             }
             if (tb != 0 ){                  // Vertical copy
-	            fprintf(dest, "newpath %g %g %g %s moveto fcircle \n",
-                    r, x, tb*y-tb*y_size,
-                    the_forces->get_color(t) );
+                _out << format("newpath %g %g %g %s moveto fcircle \n")
+                    % r % x % (tb*y-tb*y_size) % (the_forces->get_color(t) );
             }
             if ((lr != 0 )&&(tb != 0)){     // In the corner!
-	            fprintf(dest, "newpath %g %g %g %s moveto fcircle \n",
-                    r, lr*x-lr*x_size, tb*y-tb*y_size,
-                    the_forces->get_color(t) );
+                _out << format("newpath %g %g %g %s moveto fcircle \n")
+                    % r % (lr*x-lr*x_size) % (tb*y-tb*y_size)
+                    % (the_forces->get_color(t) );
             }
         }
     }

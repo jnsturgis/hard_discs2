@@ -25,6 +25,7 @@
 #include <string>
 #include <iostream>
 #include "../NVT/config.h"
+#include <boost/program_options.hpp>
 
 using namespace std;
 
@@ -78,17 +79,17 @@ string preamble = ""
 "/majorticksize minorticksize 2.0 mul def \n"
 " \n"
 "/xminortick { 0 moveto 0.0 minorticksize rlineto  \n"
-"	0.0 1.0 2.0 minorticksize mul sub rmoveto  \n"
-"	0.0 minorticksize rlineto } def \n"
+"   0.0 1.0 2.0 minorticksize mul sub rmoveto  \n"
+"   0.0 minorticksize rlineto } def \n"
 "/xmajortick { 0 moveto 0.0 majorticksize rlineto  \n"
-"	0.0 1.0 2.0 majorticksize mul sub rmoveto  \n"
-"	0.0 majorticksize rlineto 0.0 -1.0 rmoveto } def \n"
+"   0.0 1.0 2.0 majorticksize mul sub rmoveto  \n"
+"   0.0 majorticksize rlineto 0.0 -1.0 rmoveto } def \n"
 "/yminortick { 0 exch moveto minorticksize 0.0 rlineto \n"
-"	1.0 2.0 minorticksize mul sub 0.0 rmoveto \n"
-"	minorticksize 0.0 rlineto -1.0 0.0 rmoveto } def \n"
+"   1.0 2.0 minorticksize mul sub 0.0 rmoveto \n"
+"   minorticksize 0.0 rlineto -1.0 0.0 rmoveto } def \n"
 "/ymajortick { 0 exch moveto majorticksize 0.0 rlineto \n"
-"	1.0 2.0 majorticksize mul sub 0.0 rmoveto \n"
-"	majorticksize 0.0 rlineto -1.0 0.0 rmoveto } def \n"
+"   1.0 2.0 majorticksize mul sub 0.0 rmoveto \n"
+"   majorticksize 0.0 rlineto -1.0 0.0 rmoveto } def \n"
 " \n"
 "% Linetypes \n"
 "/LTw { PL [] 1 setgray } def \n"
@@ -115,7 +116,7 @@ string preamble = ""
 "/circle {currentpoint 3 -1 roll dup 0 rmoveto 0 360 arc stroke } def \n"
 "/fcircle {currentpoint 3 -1 roll dup 0 rmoveto 0 360 arc fill } def \n"
 "/BoxE  { currentpoint symbolsize dup dup rmoveto -2.0 mul dup 0  \n"
-"	rlineto dup 0 exch rlineto -1 mul 0 rlineto closepath stroke } def \n"
+"   rlineto dup 0 exch rlineto -1 mul 0 rlineto closepath stroke } def \n"
 " \n"
 "/Symbol-Oblique /Symbol findfont [1 0 .167 1 0 0] makefont \n"
 "dup length dict begin {1 index /FID eq {pop pop} {def} ifelse} forall \n"
@@ -126,18 +127,18 @@ string preamble = ""
 "%%Page: 1 \n"
 "mydict begin \n"
 " \n"
-"gsave			% Original \n"
-"28.3 28.3 scale		% Use cm as units \n"
+"gsave          % Original \n"
+"28.3 28.3 scale        % Use cm as units \n"
 " \n"
-"gsave			% cm scaling page \n"
-"			% Set up for panel 1 box 0,0 to 5,5 \n"
+"gsave          % cm scaling page \n"
+"           % Set up for panel 1 box 0,0 to 5,5 \n"
 "0 setgray \n"
 " \n"
 "newpath \n"
 " \n"
-"0.005 UL		% set standard line width \n"
-"LTb			% set line colour, width and dash. \n"
-" 0 0   moveto		% draw bounding box \n"
+"0.005 UL       % set standard line width \n"
+"LTb            % set line colour, width and dash. \n"
+" 0 0   moveto      % draw bounding box \n"
 " 8 0  lineto \n"
 " 8 8  lineto \n"
 " 0 8  lineto \n"
@@ -145,7 +146,7 @@ string preamble = ""
 "stroke \n"
 " \n"
 "newpath \n"
-"0  0  moveto		% and again bounding box \n"
+"0  0  moveto       % and again bounding box \n"
 "8  0  lineto \n"
 "8  8  lineto \n"
 "0  8  lineto \n"
@@ -155,9 +156,9 @@ string preamble = ""
 "gsave \n";
 
 string ending = ""
-"grestore		% leave data scaling \n"
-"grestore		% End of panel \n"
-"grestore		% End of Figure \n"
+"grestore       % leave data scaling \n"
+"grestore       % End of panel \n"
+"grestore       % End of Figure \n"
 "end \n"
 "showpage \n"
 "%%Trailer \n"
@@ -169,20 +170,60 @@ string ending = ""
  */
 int main(int argc, char** argv) {
     topology    *a_topology    = new topology();
-    config      *current_state = new config(stdin);
-    force_field *the_forces    = new force_field();
+    string      in_name;
+    string      out_name;
     double      scale;
+    
+    // Command line handling
+    namespace po = boost::program_options;
+    po::options_description desc("Generic options");
+    desc.add_options()
+        ("help", "Produce help message")
+        // It seems easy to simply store things in variables
+        ("config,c", po::value<string>(&in_name)->required(), "Configuration (input)")
+        ("output,o", po::value<string>(&out_name)->required(), "Postscript output (output)")
+    ;
+
+    // Store arguments
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    
+    // Print the help if needed
+    if (vm.count("help")) {
+        cout << desc << "\n";
+        return 1;        
+    }
+    
+    po::notify(vm);
+    
+    // Get the configuration
+    if (vm.count("config")) {
+        cout << "Configuration file: " << in_name << "\n";
+    }
+    
+    config      *current_state = new config(in_name);
+    force_field *the_forces    = new force_field();
 
     current_state->add_topology(a_topology);
     scale = 8.0/max(current_state->x_size,current_state->y_size);
 
-    cout << preamble;
-    cout << scale;
-    cout << " dup scale \n";
-    cout << 0.5/scale;
-    cout << " UL\n";
-    current_state->ps_atoms(the_forces, stdout);
-    cout << ending;
+    // Open a stream to write the output
+    ofstream _out(out_name.c_str());
+    
+    // Check if we could open it
+    if(!_out) {
+        cout << "Cannot open file " << out_name << ", exiting ...\n";
+        return 1;
+    }
+
+    // Write in it
+    _out << preamble;
+    _out << scale;
+    _out << " dup scale \n";
+    _out << 0.5/scale;
+    _out << " UL\n";
+    current_state->ps_atoms(the_forces, _out);
+    _out << ending;
 
     delete the_forces;
     delete current_state;

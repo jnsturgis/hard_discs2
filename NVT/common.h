@@ -9,9 +9,11 @@
 #define COMMON_H
 
 #include <assert.h>
+#include <cstdlib>
+#include <cmath>
 
-#define min(a,b)        (a<b)?(a):(b)
-#define max(a,b)        (a>b)?(a):(b)
+#define simple_min(a,b)        (a<b)?(a):(b)
+#define simple_max(a,b)        (a>b)?(a):(b)
 
 #define M_2PI           (M_PI+M_PI)
 #define rnd_lin(range)  ((range*(double)rand())/(double)RAND_MAX)

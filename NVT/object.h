@@ -14,6 +14,8 @@
 
 #include "force_field.h"
 #include "topology.h"
+#include <fstream>
+#include <sstream>
 
 class object {
 public:
@@ -25,7 +27,7 @@ public:
                  double y_size,
                  bool periodic);            ///< Move the object a random amount controlled by max_dist.
     void    rotate(double max_angle );      ///< Rotate the object a random amount controlled by max_angle.
-    int     write(FILE *dest);              ///< Write the object to a file
+    int     write(std::ofstream& _out);              ///< Write the object to a file
     double  distance(object *obj2, double x_size,
                      double y_size,
                      bool periodic);        ///< Return shortest distance to second object (using periodic conditions if necessary)

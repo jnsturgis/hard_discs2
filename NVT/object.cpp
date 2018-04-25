@@ -9,6 +9,11 @@
 #include <math.h>
 #include <float.h>
 #include "common.h"
+#include <boost/format.hpp>
+#include <fstream>
+#include <sstream>
+
+using boost::format;
 
 /**
  * @brief Constructor with known type, position and orientation.
@@ -62,7 +67,7 @@ object::move(double max_dist, double x_size, double y_size, bool periodic){
     double  dist, angle;
     double  dx, dy;
 
-    assert(max_dist < min(x_size,y_size));
+    assert(max_dist < simple_min(x_size,y_size));
 
     /* Calculate shift distance */
     dist = rnd_lin(1.0);
@@ -123,16 +128,16 @@ double  object::distance(object* obj2, double x_size, double y_size, bool period
     if(periodic){
         dx2 = pos_x + x_size;
         dx2 *= dx2;
-        dx  = min(dx, dx2);
+        dx  = simple_min(dx, dx2);
         dx2 = pos_x - x_size;
         dx2 *= dx2;
-        dx  = min(dx, dx2);
+        dx  = simple_min(dx, dx2);
         dy2 = pos_y + y_size;
         dy2 *= dy2;
-        dy  = min(dy, dy2 );
+        dy  = simple_min(dy, dy2 );
         dy2 = pos_y - y_size;
         dy2 *= dy2;
-        dy  = min(dy, dy2 );
+        dy  = simple_min(dy, dy2 );
     }
     return sqrt(dx+dy);
 }
@@ -142,11 +147,14 @@ double  object::distance(object* obj2, double x_size, double y_size, bool period
  * @param dest  The file to write to (opened for writing).
  * @return      The return value of the print statement.
  */
-int
-object::write(FILE* dest){
-    assert(dest);
-    return( fprintf(dest,"%5d %9f2 %9f2 %9f2\n",
-            o_type, pos_x, pos_y, orientation ));
+//int
+
+object::write(std::ofstream& _out){
+    assert(_out);
+    _out << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
+    return 1;
+    //~ return( fprintf(dest,"%5d %9f2 %9f2 %9f2\n",
+            //~ o_type, pos_x, pos_y, orientation ));
 }
 
 /**
