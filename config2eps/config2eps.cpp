@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     
     // Print the help if needed
-    if (vm.count("help")) {
+    if (vm.count("help") || argc == 1) {
         cout << desc << "\n";
         return 1;        
     }

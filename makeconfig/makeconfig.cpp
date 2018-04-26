@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <boost/program_options.hpp>
 
 using namespace std;
 
@@ -43,16 +44,36 @@ void usage(){
 
 int main(int argc, char **argv)
 {
-    int     type, n;
+    int     type, n, xsize, ysize, type0, type1;
     double  pos_x, pos_y, orient;
     config  *a_config = new config();
+    string  out_name;
 
-    if( argc < 4 ){
-        fatal_error("%s\n", "Wrong number of arguments");
+    namespace po = boost::program_options;
+    po::options_description desc("Generic options");
+    desc.add_options()
+        ("help", "Produce help message")
+        ("xsize,x", po::value<int>(&xsize)->required(), "Size in the x direction")
+        ("ysize,y", po::value<int>(&ysize)->required(), "Size in the y direction")
+        ("type0,a", po::value<int>(&type0)->required(), "Number of type 0 atoms")
+        ("type1,b", po::value<int>(&type1)->required(), "Number of type 1 atoms")
+        ("output,o", po::value<string>(&out_name)->required(), "Output configuration name")
+    ;
+
+    // Store arguments
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    
+    // Print the help if needed
+    if (vm.count("help") || argc == 1) {
+        cout << desc << "\n";
+        return 1;        
     }
+    
+    po::notify(vm);
 
-    a_config->x_size = atof(argv[1]);
-    a_config->y_size = atof(argv[2]);
+    a_config->x_size = xsize;
+    a_config->y_size = ysize;
     type = 0;
     while( type+3 < argc ){
         n = atoi(argv[3+type]);
@@ -65,7 +86,7 @@ int main(int argc, char **argv)
         type++;
     }
 
-    a_config->write(stdout);
+    a_config->write(out_name);
 
     return 0;
 }

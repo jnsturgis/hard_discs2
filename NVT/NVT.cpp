@@ -175,8 +175,8 @@ int main(int argc, char** argv) {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     
-    // Print the help if needed
-    if (vm.count("help")) {
+    // Print the help if needed or if it's run without arguments 
+    if (vm.count("help") || argc == 1) {
         cout << desc << "\n";
         return 1;        
     }
