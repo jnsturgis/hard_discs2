@@ -105,6 +105,7 @@
 #include <iostream>
 #include "integrator.h"
 #include "common.h"
+#include <fstream>
 
 // program_options, to parse arguments
 #include <boost/program_options.hpp>
@@ -269,9 +270,18 @@ int main(int argc, char** argv) {
         step = simple_min(step,it_max-i);
     }
     delete the_integrator;
-    // Update log
-    // Save result
-    current_state->write(out_name);
+    
+    // Save result - call write with an open stream
+    ofstream _out(out_name.c_str());
+    
+    // Check if we could open it
+    if(!_out) {
+        cout << "Cannot open file " << out_file << ", exiting ...\n";
+        return 1;
+    }
+    
+    // Pass it to the config to write
+    current_state->write(_out);
     // Clean up
     delete current_state;
     delete the_forces;

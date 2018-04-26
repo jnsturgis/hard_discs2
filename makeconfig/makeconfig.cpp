@@ -44,7 +44,7 @@ void usage(){
 
 int main(int argc, char **argv)
 {
-    int     type, n, xsize, ysize, type0, type1;
+    int     n, xsize, ysize, type0, type1;
     double  pos_x, pos_y, orient;
     config  *a_config = new config();
     string  out_name;
@@ -74,19 +74,44 @@ int main(int argc, char **argv)
 
     a_config->x_size = xsize;
     a_config->y_size = ysize;
-    type = 0;
-    while( type+3 < argc ){
-        n = atoi(argv[3+type]);
-        for(int i = 0; i < n; i++ ){
-            pos_x  = rnd_lin(a_config->x_size);
-            pos_y  = rnd_lin(a_config->y_size);
-            orient = rnd_lin(M_2PI);
-            a_config->add_object( new object( type, pos_x, pos_y, orient ));
+    
+    // Handle each bead type separately
+    // Throw an error if none have been provided
+    if ( vm.count("type0") || vm.count("type1") ) {
+        if (vm.count("type0")) {
+            n = type0;
+            for(int i = 0; i < n; i++ ){
+                pos_x  = rnd_lin(a_config->x_size);
+                pos_y  = rnd_lin(a_config->y_size);
+                orient = rnd_lin(M_2PI);
+                a_config->add_object( new object( 0, pos_x, pos_y, orient ));
+            }
         }
-        type++;
+        if (vm.count("type1")) {
+            n = type1;
+            for(int i = 0; i < n; i++ ){
+                pos_x  = rnd_lin(a_config->x_size);
+                pos_y  = rnd_lin(a_config->y_size);
+                orient = rnd_lin(M_2PI);
+                a_config->add_object( new object( 1, pos_x, pos_y, orient ));
+            }
+        }
+    }
+    else {
+        cout << "Missing at least a bead number\n";
     }
 
-    a_config->write(out_name);
+    // Open a stream to write the output
+    ofstream _out(out_name.c_str());
+    
+    // Check if we could open it
+    if(!_out) {
+        cout << "Cannot open file " << out_name << ", exiting ...\n";
+        return 1;
+    }
+    
+    // Write
+    a_config->write(_out);
 
     return 0;
 }

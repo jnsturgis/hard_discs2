@@ -236,20 +236,11 @@ double config::energy(force_field *&the_force) {
  *              correct.
  */
 
-int config::write(string out_file ){
+int config::write(std::ofstream& _out){
     int     i;
     object  *this_obj;
     
-    // Open a stream to write the output
-    ofstream _out(out_file.c_str());
-    
-    // Check if we could open it
-    if(!_out) {
-        cout << "Cannot open file " << out_file << ", exiting ...\n";
-        return 1;
-    }
-    
-    // Now put the header and number of objects inside
+    // Put the header and number of objects inside
     // Using boost for formatting, which seems the proper way in c++
     _out << format("%9f2 %9f2 \n") % x_size % y_size;
     _out << format("%d\n") % obj_list.size();
