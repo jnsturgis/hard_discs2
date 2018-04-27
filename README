@@ -1,3 +1,13 @@
 # hard_discs2
 
-Need the BOOST library
+* Need the BOOST library
+
+* Force-field file is formatted this way
+nbead                          // number of different beads
+radius radius radius ...       // radius of each bead (one for each)
+red green blue orange ...      // color of each bead (one for each), only red green blue orange at this moment
+12 3                           // cutoff and length
+-2.0  3.0  1.0 -1.0            // nbead*nbead matrix of interactions
+ 3.0 -6.0 -1.0  2.0            
+ 1.0 -1.0 -3.0  6.0
+-1.0  2.0  6.0 -8.0
