@@ -43,9 +43,15 @@
 #define FORCE_FIELD_H
 
 #include <stdio.h>
+#include <string>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+using namespace boost::numeric::ublas;
 
 // There must be an efficient beter way
-#define  MAX_TYPE   4
+//~ #define  MAX_TYPE   4
 // The forcefield is currently hard coded... should read from a file.
 
 class force_field {
@@ -53,18 +59,21 @@ public:
     force_field();                          ///< Constructor default
     force_field(const force_field& orig);   ///< Constructor with copy
     virtual ~force_field();                 ///< Destructor
+    int         update(std::string ff_filename);
     double      interaction(int t1, int t2, double r); ///< Calculate interaction energy
     double      size(int t1);               ///< The hard core size of an atom type t1.
-    int         write( FILE *dest );        ///< Write the forcefield to file
+    //~ int         write( FILE *dest );        ///< Write the forcefield to file
+    int         write(std::ofstream& _log);        ///< Write the forcefield to file
     const char  *get_color(int t);          ///< Color for plot output
     double      cut_off;                    ///< Distance cutoff between objects
     double      big_energy;                 ///< Large value less than infinity.
 private:
     int         type_max;                   ///< The number of different atom types
     double      length;                     ///< Interaction length (probably should be array)
-    double      radius[MAX_TYPE];           ///< Atom radii
-    const char *color [MAX_TYPE];           ///< Atom colors for postscript
-    double      energy[MAX_TYPE][MAX_TYPE]; ///< Pairwise interaction well depths.
+    int         cutoff;                     ///< The cutoff
+    vector<double>      radius;        ///< Atom radii
+    vector< std::string>  color;       ///< Atom colors for postscript
+    matrix<double>      energy;        ///< Pairwise interaction well depths.
 };
 
 #endif /* FORCE_FIELD_H */

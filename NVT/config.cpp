@@ -65,6 +65,11 @@ config::config(string in_file) {
     // Open a stream of the file
     ifstream ff(in_file.c_str());
     
+    // Check if the file exists
+    if(ff.fail()) {
+        throw runtime_error("Could not open force-field file\n");
+    }
+    
     // We get each line with getline(in_file, line)
     // Here we want stuff from the first two lines so
     // Get the line

@@ -173,6 +173,7 @@ int main(int argc, char** argv) {
     string      in_name;
     string      out_name;
     double      scale;
+    string      ff_filename;
     
     // Command line handling
     namespace po = boost::program_options;
@@ -182,6 +183,7 @@ int main(int argc, char** argv) {
         // It seems easy to simply store things in variables
         ("config,c", po::value<string>(&in_name)->required(), "Configuration (input)")
         ("output,o", po::value<string>(&out_name)->required(), "Postscript output (output)")
+        ("forcefield,f", po::value<string>(&ff_filename)->default_value("forcefield"), "Force-field filename (default 'forcefield')")
     ;
 
     // Store arguments
@@ -203,6 +205,9 @@ int main(int argc, char** argv) {
     
     config      *current_state = new config(in_name);
     force_field *the_forces    = new force_field();
+    
+    // Need to populate the force-field with the same force-field file
+    the_forces->update(ff_filename);
 
     current_state->add_topology(a_topology);
     scale = 8.0/max(current_state->x_size,current_state->y_size);
