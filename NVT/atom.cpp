@@ -11,8 +11,15 @@
  * @class   atom atom.h "atom.h"
  */
 
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include "common.h"
 #include "atom.h"
+#include <boost/format.hpp>
+using boost::format;
+
 
 /**
  * \brief  Constructor reading an atom from a file.
@@ -64,6 +71,10 @@ atom::~atom() {
  *  \return int         The return value (error status) from the
  *                      print call.
  */
-int     atom::write(FILE* dest){
-    return fprintf(dest, "%3d %9g %9g\n", type, x_pos, y_pos);
-}
+//~ int     atom::write(FILE* dest){
+    //~ return fprintf(dest, "%3d %9g %9g\n", type, x_pos, y_pos);
+//~ }
+//~ int  atom::write(std::ofstream& _log){
+    //~ _log << format("%3d %9g %9g\n") % type % x_pos % y_pos;
+    //~ return 1;
+//~ }

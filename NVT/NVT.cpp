@@ -103,9 +103,9 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include "integrator.h"
 #include "common.h"
-#include <fstream>
 
 // program_options, to parse arguments
 #include <boost/program_options.hpp>
@@ -136,6 +136,7 @@ int main(int argc, char** argv) {
     string       out_name;
     string       ff_filename;
     string       log_name;
+    string       topology_file;
     
     // Objects in headers
     config      *current_state;
@@ -144,6 +145,7 @@ int main(int argc, char** argv) {
     // later fill it with stuff from a forcefield file
     force_field *the_forces = new force_field(); // This memory is lost
     integrator  *the_integrator = NULL;
+    // Here, an empty topology
     topology    *a_topology;
 
     int         N1;
@@ -173,6 +175,7 @@ int main(int argc, char** argv) {
         ("beta,b", po::value<double>(&beta), "Beta (default 1)")
         ("pressure,r", po::value<double>(&P1), "Pressure (default 1)")
         ("forcefield,f", po::value<string>(&ff_filename)->default_value("forcefield"), "Force-field filename (default 'forcefield')")
+        ("topology,t", po::value<string>(&topology_file)->default_value("topology"), "Topology filename (default 'topology')")
         ("logfile,l", po::value<string>(&log_name)->default_value("log"), "Log file (default 'log')")
         ("initial,c", po::value<string>(&in_name)->required(), "Initial configuration (input)")
         ("final,o", po::value<string>(&out_name)->required(), "Final configuration (output)")
@@ -222,23 +225,39 @@ int main(int argc, char** argv) {
      * So, keep it that way */
     // Should maybe pass a stream to the constructor, or a name is ok ?
     current_state = new config(in_name);
-    // Add the topology to the configuration.
-    current_state->add_topology(a_topology);
     
     // Now update the (empty) force field with the force field file
-    cout << "Loading the force-field from the file '" << ff_filename << "'\n";
+    if (vm.count("forcefield")) {
+        cout << "\nLoading the force-field from the file '" << ff_filename << "'\n";
+    }
     the_forces->update(ff_filename);
-    cout << "Force-field loaded\n\n";
-    _log << "Force-field file: " << ff_filename << "\n";
+    cout << "Force-field loaded\n";
+    _log << "\nForce-field file: " << ff_filename << "\n";
     // Write a summary of the force-field in the log
     the_forces->write(_log);
-
+    
+    // And here give the radiuses to the topology
+    // To create the atoms at the right place
+    if (vm.count("topology")) {
+        cout << "Loading the topology from the file '" << topology_file << "'\n";
+    }
+    a_topology->fill_topology(the_forces->radius, topology_file);
+    cout << "Topology loaded\n";
+    _log << "Topology file: " << topology_file << "\n";
+    // And write a summary of the topology in the log
+    a_topology->write(_log); 
+    
+    // Add the topology to the configuration.
+    // Need to add the topology to the configuration after 
+    // Knowing about the force-field, for multi-atoms topologies
+    current_state->add_topology(a_topology);
+    
     U1 = current_state->energy(the_forces);
     V1 = current_state->area();
     N1 = current_state->n_objects();
 
     // Print report of state, both in terminal and log
-    cout << "Configuration loaded\n";
+    cout << "Configuration loaded\n\n";
     _log << "Configuration loaded\n";
     cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
     cout << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;

@@ -174,6 +174,7 @@ int main(int argc, char** argv) {
     string      out_name;
     double      scale;
     string      ff_filename;
+    string      topology_file;
     
     // Command line handling
     namespace po = boost::program_options;
@@ -184,6 +185,7 @@ int main(int argc, char** argv) {
         ("config,c", po::value<string>(&in_name)->required(), "Configuration (input)")
         ("output,o", po::value<string>(&out_name)->required(), "Postscript output (output)")
         ("forcefield,f", po::value<string>(&ff_filename)->default_value("forcefield"), "Force-field filename (default 'forcefield')")
+        ("topology,t", po::value<string>(&topology_file)->default_value("topology"), "Topology filename (default 'topology')")
     ;
 
     // Store arguments
@@ -208,7 +210,11 @@ int main(int argc, char** argv) {
     
     // Need to populate the force-field with the same force-field file
     the_forces->update(ff_filename);
+    
+    // And populate the topology
+    a_topology->fill_topology(the_forces->radius, topology_file);
 
+    // Add it to the configuration
     current_state->add_topology(a_topology);
     scale = 8.0/max(current_state->x_size,current_state->y_size);
 

@@ -67,11 +67,12 @@ public:
     const char  *get_color(int t);          ///< Color for plot output
     double      cut_off;                    ///< Distance cutoff between objects
     double      big_energy;                 ///< Large value less than infinity.
+    vector<double>      radius;        ///< Atom radii
+    //~ vector<double> get_radius();            // Is that how we should get some variable ?
 private:
     int         type_max;                   ///< The number of different atom types
     double      length;                     ///< Interaction length (probably should be array)
     int         cutoff;                     ///< The cutoff
-    vector<double>      radius;        ///< Atom radii
     vector< std::string>  color;       ///< Atom colors for postscript
     matrix<double>      energy;        ///< Pairwise interaction well depths.
 };

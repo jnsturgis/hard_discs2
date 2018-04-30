@@ -67,7 +67,7 @@ config::config(string in_file) {
     
     // Check if the file exists
     if(ff.fail()) {
-        throw runtime_error("Could not open force-field file\n");
+        throw runtime_error("Could not open configuration file\n");
     }
     
     // We get each line with getline(in_file, line)
