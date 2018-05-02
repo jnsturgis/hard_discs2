@@ -252,6 +252,9 @@ int main(int argc, char** argv) {
     // Knowing about the force-field, for multi-atoms topologies
     current_state->add_topology(a_topology);
     
+    // Debug - write the topology to a file from the config
+    //~ current_state->write_topology(_log);
+    
     U1 = current_state->energy(the_forces);
     V1 = current_state->area();
     N1 = current_state->n_objects();
@@ -279,12 +282,14 @@ int main(int argc, char** argv) {
         state_h = &current_state;
         the_integrator->run(state_h, beta, P1, 2*N1);
         current_state = *state_h;
+        //~ current_state->write_topology(_log);
+        //~ break;
         dl_max = the_integrator->dl_max;
         i += 2*N1;
 
         U1 = current_state->energy(the_forces);
     }
-
+    //~ std::exit(1);
 
     if( the_integrator ){
         delete the_integrator;
@@ -306,6 +311,8 @@ int main(int argc, char** argv) {
         state_h = &current_state;
         the_integrator->run(state_h, beta, P1, step);
         current_state = *state_h;
+        //~ current_state->write_topology(_log);
+        //~ break;
 
         U1 = current_state->energy(the_forces);
         V1 = current_state->area();

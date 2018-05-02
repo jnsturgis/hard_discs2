@@ -31,6 +31,7 @@ using boost::format;
  */
 topology::topology() {
     int i;
+    n_top = 0;
 
     for(i=0; i<MAX_TOPO; i++){
         data[i]=(atom **)NULL;
@@ -125,6 +126,7 @@ int topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::s
                     len[data_count]=1;           
                     
                     data_count ++;
+                    n_top ++;
                 }
             } else if( !temp_str.compare("square") ) {
 
@@ -149,6 +151,7 @@ int topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::s
                     len[data_count]= 4;       
 
                     data_count ++;
+                    n_top ++;
                 }
             } else if( !temp_str.compare("triangle") ) {
                 
@@ -176,6 +179,7 @@ int topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::s
                     len[data_count]= 3;       
 
                     data_count ++;
+                    n_top ++;
                 }
             }
         }
@@ -222,7 +226,7 @@ int     topology::write(std::ofstream& _log){
         if (data[i] == (atom **)NULL ) break;
         
         // Now for each type of topology ...
-        _log << "Topology " << data_type[i] << " number " << i << " has these bead types: ";
+        _log << "Topology " << data_type[i] << " number " << i << " has " << len[i] << " beads with these bead types: ";
         
         for(int j = 0; j < MAX_ATOMS; j++){
             if( !data[i][j] ) break;

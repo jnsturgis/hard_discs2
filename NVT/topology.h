@@ -35,6 +35,7 @@ public:
     int     n_atom(int type);           ///< Number of atoms in this topology
     atom    *atoms(int type, int i);    ///< Function to read data
     int     write(std::ofstream& _log);          ///< Write the topology info.
+    int     n_top;                       ///< how many topologies
 private:
     int     check();                    ///< Verify all is well with the topology.
     int     len[MAX_TOPO];               ///< Number of atoms of different types. (JS 16/4)

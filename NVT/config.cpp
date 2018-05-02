@@ -136,7 +136,9 @@ config::config(config& orig) {
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
     unchanged      = orig.unchanged;
-    the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
+    //~ the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
+    the_topology   = orig.the_topology; // THIS CHEAT
+    //~ std::cout << "After & copy, there are " << the_topology->n_top << " diff topologies\n";
     is_periodic    = orig.is_periodic;
     obj_list.empty();
     for(int i = 0; i < orig.n_objects(); i++){
@@ -146,6 +148,26 @@ config::config(config& orig) {
         obj_list.add(my_obj2);
     }
 }
+//~ config::config(config* orig) {
+    //~ object  *my_obj1;
+    //~ object  *my_obj2;
+
+    //~ x_size         = orig->x_size;
+    //~ y_size         = orig->y_size;
+    //~ saved_energy   = orig->saved_energy;
+    //~ unchanged      = orig->unchanged;
+    //~ the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
+    //~ the_topology   = orig->the_topology; // THIS CHEAT
+    //~ std::cout << "After * copy, there are " << the_topology->n_top << " diff topologies\n";
+    //~ is_periodic    = orig->is_periodic;
+    //~ obj_list.empty();
+    //~ for(int i = 0; i < orig->n_objects(); i++){
+        //~ my_obj1 = orig->obj_list.get(i);
+        //~ my_obj2 = new object( my_obj1->o_type, my_obj1->pos_x,
+                //~ my_obj1->pos_y, my_obj1->orientation);
+        //~ obj_list.add(my_obj2);
+    //~ }
+//~ }
 
 /**
  * Destructor. Destroy the configuration releasing memory. As constructor
@@ -158,6 +180,11 @@ config::~config() {
 /**
  * @return The area of the configuration.
  */
+ 
+int config::get_n_top(){
+    return the_topology->n_top;
+}
+ 
 double config::area() { return x_size * y_size;}
 
 /**
@@ -176,13 +203,22 @@ double config::area() { return x_size * y_size;}
 double config::energy(force_field *&the_force) {
     int     i1, i2;                         // Two counters
     double  value = 0.0;                    // An accumulator that starts at 0.0
-    object  *my_obj1;                       // Two object pointers
+    object  *my_obj1, *my_obj2;                       // Two object pointers
+    
+    //~ std::cout << "one call to config::energy\n";
+    /* DEBUG */
+    //~ std::ofstream _debug("debug");
+    //~ the_topology->write(_debug);
+    //~ _debug.close();
+    /* DEBUG */
 
     if (! unchanged) {                      // Only if necessary
         saved_energy = 0.0;                 // Loop over the objects
                                             // This code needs optimizing.
+        //~ std::cout << "Nobj is " << obj_list.size() << "\n";
         for(i1 = 0; i1 < obj_list.size(); i1++ ){
             my_obj1 = obj_list.get(i1);
+            //~ std::cout << "Obj1 type is " << my_obj1->o_type << "\n";
             if( my_obj1->recalculate ){
                 value = 0.0;
                 for(i2 = 0; i2<obj_list.size(); i2++ ){
@@ -191,7 +227,8 @@ double config::energy(force_field *&the_force) {
                         double dx = 0.0;
                         double dy = 0.0;
 
-                        object  *my_obj2 = obj_list.get(i2);
+                        my_obj2 = obj_list.get(i2);
+                        //~ std::cout << "Obj1 and 2 type is " << my_obj1->o_type << " " << my_obj2->o_type << "\n";
                         if(is_periodic){     // Move my_obj2 to closest image
                                              // Check this code...
                             r  = my_obj2->pos_x - my_obj1->pos_x;
@@ -208,6 +245,7 @@ double config::energy(force_field *&the_force) {
                         }
                         value += my_obj1->interaction( the_force,
                                 the_topology, my_obj2 );
+                        //~ std::cout << "value of interaction between obj1 and 2 " << value << "\n";
                         if(is_periodic){    // And move back again.
                             my_obj2->pos_x -= dx;
                             my_obj2->pos_y -= dy;
@@ -397,6 +435,11 @@ void    config::add_topology(topology* a_topology){
     if( the_topology )                      // If there is already one
         delete( the_topology );             // Get rid of it
     the_topology = a_topology;              // Make the new association
+}
+
+int    config::write_topology(std::ofstream& _log){
+    the_topology->write(_log);
+    return 1;
 }
 
 /** \brief Insert an object into the configuration.

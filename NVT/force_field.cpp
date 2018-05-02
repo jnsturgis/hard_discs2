@@ -143,7 +143,7 @@ int force_field::update(std::string ff_filename) {
     iss.clear();
     getline(ff, line);
     iss.str(line);
-    if (!(iss >> cutoff >> length)) {
+    if (!(iss >> cut_off >> length)) {
         throw range_error("Fourth line of the force-field file should be the cutoff and the length ...\n");
     }
     
@@ -177,14 +177,20 @@ force_field::interaction(int t1, int t2, double r) {
 
         // Implementation of triangle potential with repulsive core
         hard  = radius(t1) + radius(t2);
+        //~ cout << "hard wall is ... " << hard << "\n";
         r    -= hard;
         if( r < 0 ){
+            //~ cout << "hard wall anyone ?\n";
             value = big_energy * (1 - r/hard);
         } else if (r< length) {
+            //~ cout << "no hard wall here\n";
             r /= length;                        /// r between 0.0 and 1.0
             value = energy(t1, t2) * (1.0-r);
         }
     }
+    //~ if( value != 0.0 ) {
+        //~ cout << "Interaction energy ! " << value << "\n";
+    //~ }
     return value;
 }
 
@@ -196,7 +202,7 @@ int force_field::write(std::ofstream& _log){
     int i,j;
 
     _log << "\nSummary of the force-field\n";
-    _log << "Cut off is " << cutoff << "\n";
+    _log << "Cut off is " << cut_off << "\n";
     _log << "Length scale is " << length << "\n";
     _log << "Number of atom types is " << type_max << "\n";
     _log << "Colors are  [";

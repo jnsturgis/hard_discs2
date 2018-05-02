@@ -89,6 +89,7 @@ public:
     virtual ~config();              ///< Destroy a conformation
 
     void    add_topology(topology *a_topology); ///< Attach a topology to the configuration
+    int    write_topology(std::ofstream& _log); ///< Write the topology, debug
     void    add_object(object *orig); ///< Insert the object orig into the configuration
     int     write(std::ofstream& _out);    ///< Write the conformation to the dest file
     void    ps_atoms(force_field *the_forces, std::ofstream& _out);   ///< Write the postscript part for the atoms.
@@ -112,6 +113,8 @@ public:
     double      y_size;             ///< The height of the configuration
 
     bool        unchanged;          ///< Is the configuration unchanged since the last evaluation of energy.
+    
+    int         get_n_top();        ///< how many topologies ?
 private:
     double      saved_energy;       ///< The last result of energy evaluation.
     o_list      obj_list;           ///< The objects in the configuration
