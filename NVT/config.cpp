@@ -65,6 +65,11 @@ config::config(string in_file) {
     // Open a stream of the file
     ifstream ff(in_file.c_str());
     
+    // Check if the file exists
+    if(ff.fail()) {
+        throw runtime_error("Could not open configuration file\n");
+    }
+    
     // We get each line with getline(in_file, line)
     // Here we want stuff from the first two lines so
     // Get the line
@@ -116,7 +121,8 @@ config::config(string in_file) {
     is_periodic = true;                             // This should be read from file.
 
     assert(n_obj == n_objects() );                  // Should check the configuration
-                                                    //~ // is alright.
+                                                    // is alright.
+    ff.close();
 }
 
 /**
@@ -131,7 +137,7 @@ config::config(config& orig) {
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
     unchanged      = orig.unchanged;
-    the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
+    the_topology   = orig.the_topology; // THIS CHEAT
     is_periodic    = orig.is_periodic;
     obj_list.empty();
     for(int i = 0; i < orig.n_objects(); i++){
@@ -147,12 +153,17 @@ config::config(config& orig) {
  * uses new probably need explicit destroy.
  */
 config::~config() {
-    if(the_topology) delete(the_topology);
+    //~ if(the_topology) delete(the_topology);
 }
 
 /**
  * @return The area of the configuration.
  */
+ 
+int config::get_n_top(){
+    return the_topology->n_top;
+}
+ 
 double config::area() { return x_size * y_size;}
 
 /**
@@ -171,7 +182,7 @@ double config::area() { return x_size * y_size;}
 double config::energy(force_field *&the_force) {
     int     i1, i2;                         // Two counters
     double  value = 0.0;                    // An accumulator that starts at 0.0
-    object  *my_obj1;                       // Two object pointers
+    object  *my_obj1, *my_obj2;                       // Two object pointers
 
     if (! unchanged) {                      // Only if necessary
         saved_energy = 0.0;                 // Loop over the objects
@@ -186,7 +197,7 @@ double config::energy(force_field *&the_force) {
                         double dx = 0.0;
                         double dy = 0.0;
 
-                        object  *my_obj2 = obj_list.get(i2);
+                        my_obj2 = obj_list.get(i2);
                         if(is_periodic){     // Move my_obj2 to closest image
                                              // Check this code...
                             r  = my_obj2->pos_x - my_obj1->pos_x;
@@ -236,20 +247,11 @@ double config::energy(force_field *&the_force) {
  *              correct.
  */
 
-int config::write(string out_file ){
+int config::write(std::ofstream& _out){
     int     i;
     object  *this_obj;
     
-    // Open a stream to write the output
-    ofstream _out(out_file.c_str());
-    
-    // Check if we could open it
-    if(!_out) {
-        cout << "Cannot open file " << out_file << ", exiting ...\n";
-        return 1;
-    }
-    
-    // Now put the header and number of objects inside
+    // Put the header and number of objects inside
     // Using boost for formatting, which seems the proper way in c++
     _out << format("%9f2 %9f2 \n") % x_size % y_size;
     _out << format("%d\n") % obj_list.size();
@@ -401,6 +403,11 @@ void    config::add_topology(topology* a_topology){
     if( the_topology )                      // If there is already one
         delete( the_topology );             // Get rid of it
     the_topology = a_topology;              // Make the new association
+}
+
+int    config::write_topology(std::ofstream& _log){
+    the_topology->write(_log);
+    return 1;
 }
 
 /** \brief Insert an object into the configuration.

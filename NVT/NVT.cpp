@@ -103,12 +103,14 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include "integrator.h"
 #include "common.h"
 
 // program_options, to parse arguments
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+// Smart pointer
 
 using boost::format;
 
@@ -133,12 +135,18 @@ int main(int argc, char** argv) {
     // Use c++ string
     string       in_name;
     string       out_name;
+    string       ff_filename;
+    string       log_name;
+    string       topology_file;
     
     // Objects in headers
     config      *current_state;
     config      **state_h;
+    // Todo: create here an empty one and
+    // later fill it with stuff from a forcefield file
     force_field *the_forces = new force_field(); // This memory is lost
     integrator  *the_integrator = NULL;
+    // Here, an empty topology
     topology    *a_topology;
 
     int         N1;
@@ -164,9 +172,12 @@ int main(int argc, char** argv) {
         ("help", "Produce help message")
         // It seems easy to simply store things in variables
         ("nsteps,n", po::value<int>(&it_max), "Number of steps (default 10000)")
-        ("pfreq,pf", po::value<int>(&n_print), "Print frequency (default 1000)")
+        ("pfreq,p", po::value<int>(&n_print), "Print frequency (default 1000)")
         ("beta,b", po::value<double>(&beta), "Beta (default 1)")
-        ("pressure,pr", po::value<double>(&P1), "Pressure (default 1)")
+        ("pressure,r", po::value<double>(&P1), "Pressure (default 1)")
+        ("forcefield,f", po::value<string>(&ff_filename)->default_value("forcefield"), "Force-field filename (default 'forcefield')")
+        ("topology,t", po::value<string>(&topology_file)->default_value("topology"), "Topology filename (default 'topology')")
+        ("logfile,l", po::value<string>(&log_name)->default_value("log"), "Log file (default 'log')")
         ("initial,c", po::value<string>(&in_name)->required(), "Initial configuration (input)")
         ("final,o", po::value<string>(&out_name)->required(), "Final configuration (output)")
     ;
@@ -175,21 +186,34 @@ int main(int argc, char** argv) {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     
-    // Print the help if needed
-    if (vm.count("help")) {
+    // Print the help if needed or if it's run without arguments 
+    if (vm.count("help") || argc == 1) {
         cout << desc << "\n";
         return 1;        
     }
     
     po::notify(vm);
     
+    // Start the log file
+    cout << "Opening log file '" << log_name << "'\n";
+    ofstream _log(log_name.c_str());
+    // Check if we could open it
+    if(!_log) {
+        cout << "Cannot open file " << log_name << " for writing, exiting ...\n";
+        return 1;
+    }
+    // Write the header of the log file
+    _log << "hard_discs2 log file - NVT\n\n"; 
+    
     // Get the two file names
     if (vm.count("initial")) {
         cout << "Configuration file: " << in_name << "\n";
+        _log << "Configuration file: " << in_name << "\n";
     }
     
     if (vm.count("final")) {
         cout << "Output configuration file: " << out_name << "\n";
+        _log << "Output configuration file: " << out_name << "\n";
     }
 
     a_topology = new topology();    // Create or load the object topologies
@@ -200,18 +224,49 @@ int main(int argc, char** argv) {
      * exceptions (try/catch block) if we don't need to propagate 
      * an exception from another constructed member within that constructor
      * So, keep it that way */
+    // Should maybe pass a stream to the constructor, or a name is ok ?
     current_state = new config(in_name);
+    
+    // Now update the (empty) force field with the force field file
+    if (vm.count("forcefield")) {
+        cout << "\nLoading the force-field from the file '" << ff_filename << "'\n";
+    }
+    the_forces->update(ff_filename);
+    cout << "Force-field loaded\n";
+    _log << "\nForce-field file: " << ff_filename << "\n";
+    // Write a summary of the force-field in the log
+    the_forces->write(_log);
+    
+    // And here give the radiuses to the topology
+    // To create the atoms at the right place
+    if (vm.count("topology")) {
+        cout << "Loading the topology from the file '" << topology_file << "'\n";
+    }
+    a_topology->fill_topology(the_forces->radius, topology_file);
+    cout << "Topology loaded\n";
+    _log << "Topology file: " << topology_file << "\n";
+    // And write a summary of the topology in the log
+    a_topology->write(_log); 
+    
     // Add the topology to the configuration.
+    // Need to add the topology to the configuration after 
+    // Knowing about the force-field, for multi-atoms topologies
     current_state->add_topology(a_topology);
-
+    
+    // Debug - write the topology to a file from the config
+    //~ current_state->write_topology(_log);
+    
     U1 = current_state->energy(the_forces);
     V1 = current_state->area();
     N1 = current_state->n_objects();
 
-    // Print report of state
-    cout << "Configuration loaded\n";
+    // Print report of state, both in terminal and log
+    cout << "Configuration loaded\n\n";
+    _log << "Configuration loaded\n";
     cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
-    cout << format("Area      = %9g  Density = %9g Energy = %9g\n") % V1 % (N1/V1) % U1;
+    cout << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+    _log << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+    _log << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
 
     dl_max = simple_min(current_state->x_size, current_state->y_size)/2.0;
 
@@ -234,13 +289,15 @@ int main(int argc, char** argv) {
         U1 = current_state->energy(the_forces);
     }
 
-
     if( the_integrator ){
         delete the_integrator;
         i = 0;
         cout << "After initial adjustments:\n";
         cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
-        cout << format("Area      = %9g  Density = %9g Energy = %9g\n") % V1 % (N1/V1) % U1;
+        cout << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+        _log << "After initial adjustments:\n";
+        _log << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+        _log << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
     }
 
     // Start NVT montecarlo loop
@@ -261,7 +318,15 @@ int main(int argc, char** argv) {
                 % (i+step) % N1 % P1 % beta;
         cout << format("Area = %g, Density = %g Energy = %g\n") 
                 % V1 % (N1/V1) % U1;
-        cout << format("Moves %d in %d, Dist_max = %g\n") 
+        cout << format("Moves %d in %d, Dist_max = %g\n\n") 
+                % (the_integrator->n_good)
+                % (the_integrator->n_good + the_integrator->n_bad)
+                % (the_integrator->dl_max);
+        _log << format("After %d steps N = %d, P = %g, beta = %g\n") 
+                % (i+step) % N1 % P1 % beta;
+        _log << format("Area = %g, Density = %g Energy = %g\n") 
+                % V1 % (N1/V1) % U1;
+        _log << format("Moves %d in %d, Dist_max = %g\n\n") 
                 % (the_integrator->n_good)
                 % (the_integrator->n_good + the_integrator->n_bad)
                 % (the_integrator->dl_max);
@@ -269,14 +334,28 @@ int main(int argc, char** argv) {
         step = simple_min(step,it_max-i);
     }
     delete the_integrator;
-    // Update log
-    // Save result
-    current_state->write(out_name);
+    
+    // Save result - call write with an open stream
+    ofstream _out(out_name.c_str());
+    
+    // Check if we could open it
+    if(!_out) {
+        cout << "Cannot open file " << out_name << " for writing, exiting ...\n";
+        return 1;
+    }
+    
+    // Pass it to the config to write
+    current_state->write(_out);
     // Clean up
+    //~ delete a_topology;
     delete current_state;
     delete the_forces;
 
     cout << "\n...Done...\n";
+    _log << "\n...Done...\n";
 
+    // And close the log and output
+    _log.close();
+    _out.close();
     return 0;
 }

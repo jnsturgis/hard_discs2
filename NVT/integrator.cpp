@@ -11,6 +11,9 @@
 #include <math.h>
 #include "integrator.h"
 #include "common.h"
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 /**
  * Constructor function that takes as a parameter the force field that will be
@@ -107,11 +110,11 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
         /* Accept or reject the new state according to the probability     */
         if(rnd_lin(1.0)<= prob_new ){
             n_good++;
-            delete(the_state);
+            delete(the_state);               
             the_state = new_state;
         } else {
             n_bad++;
-            delete(new_state);
+            delete(new_state);                
         }
         n_step++;
     }

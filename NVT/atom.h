@@ -30,7 +30,8 @@ public:
          double x, double y);   ///< Constructor with type and position
     atom(const atom& orig);     ///< Constructor for the copy of an atom
     virtual ~atom();            ///< Destructor for atoms
-    int     write(FILE *dest);  ///< Write the atom descriptor
+    //~ int     write(FILE *dest);  ///< Write the atom descriptor
+    //~ int     write(std::ofstream& _log);  ///< Write the atom descriptor
     int     type;               ///< Integer atom type, controls interactions
     double  x_pos;              ///< Atom x position relative to the object origin.
     double  y_pos;              ///< Atom y position relative to the object origin.

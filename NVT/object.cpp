@@ -12,6 +12,7 @@
 #include <boost/format.hpp>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 using boost::format;
 
@@ -147,9 +148,7 @@ double  object::distance(object* obj2, double x_size, double y_size, bool period
  * @param dest  The file to write to (opened for writing).
  * @return      The return value of the print statement.
  */
-//int
-
-object::write(std::ofstream& _out){
+int object::write(std::ofstream& _out){
     assert(_out);
     _out << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
     return 1;
@@ -200,7 +199,7 @@ double  object::interaction(force_field* the_force,
 
     n1 = the_topologies->n_atom(o_type);
     n2 = the_topologies->n_atom(obj2->o_type);
-
+    
     t2  = obj2->o_type;
     oo2 = obj2->orientation;
     ox2 = obj2->pos_x;
