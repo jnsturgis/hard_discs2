@@ -199,13 +199,6 @@ double  object::interaction(force_field* the_force,
 
     n1 = the_topologies->n_atom(o_type);
     n2 = the_topologies->n_atom(obj2->o_type);
-    //~ std::cout << "natoms-otype in obj1 is " << n1 << " " << o_type << " and obj2 " << n2 << " " << (obj2->o_type) << "\n";
-    
-    //~ /* DEBUG */
-    //~ std::ofstream _debug("debug");
-    //~ the_topologies->write(_debug);
-    //~ _debug.close();
-    //~ /* DEBUG */
     
     t2  = obj2->o_type;
     oo2 = obj2->orientation;
@@ -226,14 +219,8 @@ double  object::interaction(force_field* the_force,
             dy = y2 - y1;
             distance = sqrt(dx*dx+dy*dy);
             energy += the_force->interaction(at1->type, at2->type, distance );
-            //~ if( distance < 3 ) {
-                //~ std::cout << "Distance lower than cutoff and length ! " << distance << "\n";
-                //~ std::cout << "And cenergy is ... " << energy << "\n";
-            //~ }
-            //~ std::cout << "The distance between objects is " << distance << "\n";
         }
     }
-    //~ std::cout << "This energy is " << energy << "\n";
     return energy;
 }
 
@@ -270,7 +257,6 @@ double  object::box_energy(
         if((x1 < r ) || (x1 > (x_size-r)) ||
                 (y1 < r) || (x1 > (y_size-r))) value += the_force->big_energy;
     }
-    //~ std::cout << "Box energy " << value << "\n";
     return value;
 }
 

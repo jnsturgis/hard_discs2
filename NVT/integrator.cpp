@@ -80,12 +80,6 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
     double  prob_new;       ///< Acceptance probability.
     config  *the_state = *state_h;
     config  *new_state;     ///< Pointer to modified state.
-    
-    /* DEBUG */
-    //~ ofstream _debug("debug");
-    //~ the_state->write_topology(_debug);
-    //~ _debug.close();
-    /* DEBUG */
 
     for(i = 0; i < n_steps; i++){
         /* If necessary adjust integrator parameters and tallies */
@@ -99,15 +93,7 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
 
         /** Clone configuration and move an object in the new configuration */
         /** @todo   Chose between different types of modification           */
-        //~ std::cout << "Iteration " << i << "\n";
-        //~ std::cout << "Before new config([@]he state, there are " << the_state->get_n_top() << " topologies\n";
         new_state = new config(*the_state);
-        //~ std::cout << "After new config([@]he state, there are " << new_state->get_n_top() << " topologies\n";
-        //~ new_state->write_topology(_debug);
-        //~ new_state->write(_debug);
-        //~ std::cout << "There are " << (the_state->n_objects()) << " objects at step " << i << "\n";
-        //~ _debug.close();
-        //~ std::exit(1);
 
         /// The integrator move function.
         obj_number = rnd_lin(1.0)*the_state->n_objects();
@@ -118,36 +104,20 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
         /* Calculate probability of accepting the new state                */
         dU = new_state->energy(the_forces)
                 - the_state->energy(the_forces);
-        //~ std::cout << "dU is " << dU << "\n";
         prob_new = exp(- beta * dU );
         prob_new = simple_min(1.0,prob_new);
 
         /* Accept or reject the new state according to the probability     */
-        //~ std::cout << "Before proba, the_state has " << the_state->get_n_top() << "\n";
-        //~ std::cout << "Before proba, new_state has " << new_state->get_n_top() << "\n";
         if(rnd_lin(1.0)<= prob_new ){
             n_good++;
-            //~ std::cout << "Prob accepted, there are " << the_state->get_n_top() << " topologies in the_state to be deleted\n";
-            //~ std::cout << "Prob accepted, there are " << the_state->get_n_top() << " topologies in new_state\n";
-            //~ delete(the_state);                // WHY
-            //~ std::cout << "Prob accepted, there are " << the_state->get_n_top() << " topologies in new_state\n";
+            delete(the_state);               
             the_state = new_state;
-            //~ std::cout << "Prob accepted, there are " << the_state->get_n_top() << " topologies in the_state to be deleted\n";
-            //~ std::cout << "Prob accepted, there are " << the_state->get_n_top() << " topologies in new_state\n";
         } else {
             n_bad++;
-            //~ std::cout << "Prob refused, there are " << new_state->get_n_top() << " topologies in new_state to be deleted\n";
-            //~ std::cout << "Prob refused, there are " << the_state->get_n_top() << " topologies to be kept\n";
-            //~ delete(new_state);                // WHY
-            //~ std::cout << "Prob refused, there are " << the_state->get_n_top() << " topologies to be kept\n";
+            delete(new_state);                
         }
-        //~ std::cout << "Before next iteration, the_state has " << the_state->get_n_top() << "\n";
         n_step++;
     }
     *state_h = the_state;
-    //~ new_state->write_topology(_debug);
-    //~ new_state->write(_debug);
-    //~ _debug.close();
-    //~ std::exit(1);
     return n_step;
 }

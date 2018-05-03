@@ -110,6 +110,7 @@
 // program_options, to parse arguments
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+// Smart pointer
 
 using boost::format;
 
@@ -282,14 +283,11 @@ int main(int argc, char** argv) {
         state_h = &current_state;
         the_integrator->run(state_h, beta, P1, 2*N1);
         current_state = *state_h;
-        //~ current_state->write_topology(_log);
-        //~ break;
         dl_max = the_integrator->dl_max;
         i += 2*N1;
 
         U1 = current_state->energy(the_forces);
     }
-    //~ std::exit(1);
 
     if( the_integrator ){
         delete the_integrator;
@@ -311,8 +309,6 @@ int main(int argc, char** argv) {
         state_h = &current_state;
         the_integrator->run(state_h, beta, P1, step);
         current_state = *state_h;
-        //~ current_state->write_topology(_log);
-        //~ break;
 
         U1 = current_state->energy(the_forces);
         V1 = current_state->area();
@@ -351,11 +347,15 @@ int main(int argc, char** argv) {
     // Pass it to the config to write
     current_state->write(_out);
     // Clean up
+    //~ delete a_topology;
     delete current_state;
     delete the_forces;
 
     cout << "\n...Done...\n";
     _log << "\n...Done...\n";
 
+    // And close the log and output
+    _log.close();
+    _out.close();
     return 0;
 }

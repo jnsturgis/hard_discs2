@@ -31,7 +31,7 @@ public:
     topology(topology *orig);
     topology(const topology& orig);
     virtual ~topology();
-    int     fill_topology(vector<double> radius, std::string topology_file);
+    void     fill_topology(vector<double> radius, std::string topology_file);
     int     n_atom(int type);           ///< Number of atoms in this topology
     atom    *atoms(int type, int i);    ///< Function to read data
     int     write(std::ofstream& _log);          ///< Write the topology info.

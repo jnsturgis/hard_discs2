@@ -21,7 +21,6 @@ using boost::format;
 using namespace std;
 
 force_field::force_field() {
-    //~ int i, j;
 
     // Empty force-field !
     cut_off    = 0;
@@ -38,24 +37,24 @@ force_field::force_field() {
 }
 
 force_field::force_field(const force_field& orig) {
-    //~ int i, j;
+    int i, j;
 
     cut_off    = orig.cut_off;
     length     = orig.length;
     type_max   = orig.type_max;
     big_energy = orig.big_energy;
-    //~ for( i=0; i< type_max; i++ ){
-        //~ radius[i] = orig.radius[i];
-        //~ color[i]  = orig.color[i];
-        //~ for( j = 0; j < type_max; j++ ) energy[i][j] = orig.energy[i][j];
-    //~ }
+    for( i=0; i< type_max; i++ ){
+        radius(i) = orig.radius(i);
+        color[i]  = orig.color[i];
+        for( j = 0; j < type_max; j++ ) energy(i,j) = orig.energy(i, j);
+    }
 }
 
 force_field::~force_field() {
 }
 
 // Update a force field (empty or not) with a file
-int force_field::update(std::string ff_filename) {
+void force_field::update(std::string ff_filename) {
     int         i, j;
     string      line;
     double      temp_number;
@@ -79,7 +78,6 @@ int force_field::update(std::string ff_filename) {
     if (!(iss >> type_max)) {
         throw range_error("First line of the force-field file should only be the number of beads ...\n");
     }
-    //~ cout << "There are " << type_max << " bead types\n";
     
     // Clear iss
     iss.clear();
@@ -161,8 +159,10 @@ int force_field::update(std::string ff_filename) {
             energy(i, j) = temp_number;
         }
     }
+    
+    // Close the stream
+    ff.close();
 
-    return 0;
 }
 
 double
@@ -177,20 +177,14 @@ force_field::interaction(int t1, int t2, double r) {
 
         // Implementation of triangle potential with repulsive core
         hard  = radius(t1) + radius(t2);
-        //~ cout << "hard wall is ... " << hard << "\n";
         r    -= hard;
         if( r < 0 ){
-            //~ cout << "hard wall anyone ?\n";
             value = big_energy * (1 - r/hard);
         } else if (r< length) {
-            //~ cout << "no hard wall here\n";
             r /= length;                        /// r between 0.0 and 1.0
             value = energy(t1, t2) * (1.0-r);
         }
     }
-    //~ if( value != 0.0 ) {
-        //~ cout << "Interaction energy ! " << value << "\n";
-    //~ }
     return value;
 }
 
@@ -198,7 +192,7 @@ double  force_field::size(int t1){
     return radius[t1];
 }
 
-int force_field::write(std::ofstream& _log){
+void force_field::write(std::ofstream& _log){
     int i,j;
 
     _log << "\nSummary of the force-field\n";
@@ -226,7 +220,6 @@ int force_field::write(std::ofstream& _log){
     }
     _log << "]\n\n";
 
-    return 0;
 }
 
 const char  *force_field::get_color(int t){

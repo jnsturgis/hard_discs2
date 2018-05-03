@@ -38,32 +38,12 @@ topology::topology() {
         len[i] = 0;     // JS 16/4
     }
     
-    // If we don't create the atoms here, we can create them later at the right place
-    
-    // Now lets put in the first topology with 1 central atom
-    //~ data[0] = (atom **)malloc(MAX_ATOMS*sizeof(atom*));
-    //~ for(int j = 0; j < MAX_ATOMS; j++) data[0][j] = (atom *)NULL;
-    //~ data[0][0] = new atom(0, 0.0, 0.0);  // Memory losses here
-    //~ len[0]=1;           // JS 16/4
-
-    // Now more complex a squarish object
-    //~ data[1] = (atom **)malloc(MAX_ATOMS*sizeof(atom*));
-    //~ for(int j = 0; j < MAX_ATOMS; j++) data[1][j] = (atom *)NULL;
-    //~ data[1][0] = new atom(1, 1.0, 1.0);
-    //~ data[1][1] = new atom(1, 1.0,-1.0);
-    //~ data[1][2] = new atom(1,-1.0, 1.0);
-    //~ data[1][3] = new atom(1,-1.0,-1.0);
-    //~ len[1]= 4;          // JS 16/4
-    
-    // And a triangle one
-    //~ data[2] = (atom **)malloc(MAX_ATOMS*sizeof(atom*));
-    //~ for(int j = 0; j < MAX_ATOMS; j++) data[1][j] = (atom *)NULL;
-    //~ len[2] = 3;
+    // We don't create the atoms here
 }
 
 topology::topology(topology* orig){
     topology();                             // Cheat
-    assert(true);
+    assert(true);                           // Why ?
 }
 
 topology::topology(const topology& orig) {
@@ -81,7 +61,7 @@ topology::~topology() {
     }
 }
 
-int topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::string topology_file) {
+void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::string topology_file) {
     
     /* Read the atom types from the topology file
      * Then create atoms at the right spot for each pre-defined topology
@@ -186,8 +166,7 @@ int topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::s
         
         iss.clear();
     }
-    
-    return 1;
+    ff.close();
 }
 
 /**

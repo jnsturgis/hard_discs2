@@ -238,6 +238,7 @@ int main(int argc, char** argv) {
 
     delete the_forces;
     delete current_state;
+    delete a_topology;
 
     return 0;
 }

@@ -121,7 +121,8 @@ config::config(string in_file) {
     is_periodic = true;                             // This should be read from file.
 
     assert(n_obj == n_objects() );                  // Should check the configuration
-                                                    //~ // is alright.
+                                                    // is alright.
+    ff.close();
 }
 
 /**
@@ -136,9 +137,7 @@ config::config(config& orig) {
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
     unchanged      = orig.unchanged;
-    //~ the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
     the_topology   = orig.the_topology; // THIS CHEAT
-    //~ std::cout << "After & copy, there are " << the_topology->n_top << " diff topologies\n";
     is_periodic    = orig.is_periodic;
     obj_list.empty();
     for(int i = 0; i < orig.n_objects(); i++){
@@ -148,33 +147,13 @@ config::config(config& orig) {
         obj_list.add(my_obj2);
     }
 }
-//~ config::config(config* orig) {
-    //~ object  *my_obj1;
-    //~ object  *my_obj2;
-
-    //~ x_size         = orig->x_size;
-    //~ y_size         = orig->y_size;
-    //~ saved_energy   = orig->saved_energy;
-    //~ unchanged      = orig->unchanged;
-    //~ the_topology   = new topology( /*orig.the_topology*/ ); // Cheat as topology hard coded
-    //~ the_topology   = orig->the_topology; // THIS CHEAT
-    //~ std::cout << "After * copy, there are " << the_topology->n_top << " diff topologies\n";
-    //~ is_periodic    = orig->is_periodic;
-    //~ obj_list.empty();
-    //~ for(int i = 0; i < orig->n_objects(); i++){
-        //~ my_obj1 = orig->obj_list.get(i);
-        //~ my_obj2 = new object( my_obj1->o_type, my_obj1->pos_x,
-                //~ my_obj1->pos_y, my_obj1->orientation);
-        //~ obj_list.add(my_obj2);
-    //~ }
-//~ }
 
 /**
  * Destructor. Destroy the configuration releasing memory. As constructor
  * uses new probably need explicit destroy.
  */
 config::~config() {
-    if(the_topology) delete(the_topology);
+    //~ if(the_topology) delete(the_topology);
 }
 
 /**
@@ -204,21 +183,12 @@ double config::energy(force_field *&the_force) {
     int     i1, i2;                         // Two counters
     double  value = 0.0;                    // An accumulator that starts at 0.0
     object  *my_obj1, *my_obj2;                       // Two object pointers
-    
-    //~ std::cout << "one call to config::energy\n";
-    /* DEBUG */
-    //~ std::ofstream _debug("debug");
-    //~ the_topology->write(_debug);
-    //~ _debug.close();
-    /* DEBUG */
 
     if (! unchanged) {                      // Only if necessary
         saved_energy = 0.0;                 // Loop over the objects
                                             // This code needs optimizing.
-        //~ std::cout << "Nobj is " << obj_list.size() << "\n";
         for(i1 = 0; i1 < obj_list.size(); i1++ ){
             my_obj1 = obj_list.get(i1);
-            //~ std::cout << "Obj1 type is " << my_obj1->o_type << "\n";
             if( my_obj1->recalculate ){
                 value = 0.0;
                 for(i2 = 0; i2<obj_list.size(); i2++ ){
@@ -228,7 +198,6 @@ double config::energy(force_field *&the_force) {
                         double dy = 0.0;
 
                         my_obj2 = obj_list.get(i2);
-                        //~ std::cout << "Obj1 and 2 type is " << my_obj1->o_type << " " << my_obj2->o_type << "\n";
                         if(is_periodic){     // Move my_obj2 to closest image
                                              // Check this code...
                             r  = my_obj2->pos_x - my_obj1->pos_x;
@@ -245,7 +214,6 @@ double config::energy(force_field *&the_force) {
                         }
                         value += my_obj1->interaction( the_force,
                                 the_topology, my_obj2 );
-                        //~ std::cout << "value of interaction between obj1 and 2 " << value << "\n";
                         if(is_periodic){    // And move back again.
                             my_obj2->pos_x -= dx;
                             my_obj2->pos_y -= dy;
