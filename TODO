@@ -1,0 +1,28 @@
+Things to fix and sort out the version on Github (in no particular order)...
+1. Arrange for doxygen to produce decent documentation. (JS)
+2. Improve error checking while reading files (issue #2 comment handling JPD).
+3. Integrate non-rectangular areas without periodic conditions. (issue #1 JS)
+4. Check command line handling is OK and all programmes work (before closing issue #6)
+5. Include test suite (JS)
+6. What goes to logfile? and perhaps control of verbosity (issue #5) (JS)
+7. Forcefield from file (issue #4 - check resolved) (JS)
+8. Topology from file (issue #3) (JS)
+9. Use a makefile to build it all in the root directory...
+10 I do not like the boost library!!!
+
+===================================================
+
+build process and errors this version
+cd NVT
+make
+*** fatal error: boost/numeric/ublas/vector.hpp: No such file or directory (as includes -lboost_program_options)
+sudo apt-get install libboost-all-dev
+make
+cd ../config2eps
+make (compiles fine)
+cd ../makeconfig
+make
+
+cd doxygen
+doxygen doxyfile
+*** blank output... edit doxyfile to change inputs

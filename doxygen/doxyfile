@@ -96,8 +96,18 @@ WARN_LOGFILE            = "/home/james/src/2D_Monte_Carlo/v0_cc/doxygen/doxygen.
 # configuration options related to the input files
 #---------------------------------------------------------------------------
 INPUT                  = \
-	"NVT/main.cpp" \
-	"config2eps/main.cpp"
+	"../NVT/NVT.cpp" \
+	"../config2eps/config2eps.cpp" \
+	"../makeconfig/makeconfig.cpp" \
+	"../NVT/atom.cpp" \
+	"../NVT/atom.h" \
+	"../NVT/common.h" \
+	"../NVT/config.cpp" \
+	"../NVT/config.h" \
+	"../NVT/force_field.cpp" \
+	"../NVT/force_field.h" \
+	"../NVT/integrator.cpp" \
+	"../NVT/integrator.h" 
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          =
 RECURSIVE              = NO
