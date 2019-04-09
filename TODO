@@ -1,5 +1,5 @@
 Things to fix and sort out the version on Github (in no particular order)...
-1. Arrange for doxygen to produce decent documentation. (JS)
+1. Arrange for doxygen to produce decent documentation. Now produces documentation needs to be improved (JS)
 2. Improve error checking while reading files (issue #2 comment handling JPD).
 3. Integrate non-rectangular areas without periodic conditions. (issue #1 JS)
 4. Check command line handling is OK and all programmes work (before closing issue #6)
@@ -26,3 +26,25 @@ make
 cd doxygen
 doxygen doxyfile
 *** blank output... edit doxyfile to change inputs
+
+What should happen form make... (9)
+Type make in root directory...
+1. Verify everything is OK and dependencies are met?
+2. Make in subfolders as necessary different possible targets.
+	documentation	*** (DONE) just the documentation 
+	install		*** install the binaries in a sensible place (~/bin)
+	all		*** (DONE) binaries and documentation (default)
+	clean		*** (DONE) remove most files
+	dist-clean	*** remove even more files (including config)
+	config		*** check dependencies etc
+	test		*** run tests and produce report
+
+====================================================
+
+Documentation improvements
+1. The programmes and their usage as well as the different files and their formats. Users manual.
+2. Dependencies
+ls
+
+====================================================
+

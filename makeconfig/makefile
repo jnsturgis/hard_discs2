@@ -14,4 +14,4 @@ makeconfig : $(OBJ)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean :
-	rm $(EXEC_NAME) $(OBJ)
+	rm -f $(EXEC_NAME) $(OBJ)
