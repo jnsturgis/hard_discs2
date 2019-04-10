@@ -95,19 +95,44 @@ WARN_LOGFILE            = "/home/james/src/2D_Monte_Carlo/v0_cc/doxygen/doxygen.
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
+# Class descriptions
 INPUT                  = \
-	"../NVT/NVT.cpp" \
-	"../config2eps/config2eps.cpp" \
-	"../makeconfig/makeconfig.cpp" \
 	"../NVT/atom.cpp" \
 	"../NVT/atom.h" \
-	"../NVT/common.h" \
 	"../NVT/config.cpp" \
 	"../NVT/config.h" \
 	"../NVT/force_field.cpp" \
 	"../NVT/force_field.h" \
 	"../NVT/integrator.cpp" \
-	"../NVT/integrator.h" 
+	"../NVT/integrator.h" \
+	"../NVT/object.cpp" \
+	"../NVT/object.h" \
+	"../NVT/o_list.cpp" \
+	"../NVT/o_list.h" \
+	"../NVT/topology.cpp" \
+	"../NVT/topology.h"
+
+# Shared header files
+INPUT += \
+	"../NVT/common.h" \
+
+# File format descriptions
+INPUT += \
+	"../NVT/config.md" \
+	"../NVT/force_field.md" \
+	"../NVT/topology.md"
+
+# Program user manual pages
+INPUT += \
+	"../NVT/NVT.md" \
+	"../config2eps/config2eps.md" \
+	"../makeconfig/makeconfig.md"
+
+# Main page
+INPUT += ../README.md
+
+USE_MDFILE_AS_MAINPAGE = ../README.md
+
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          =
 RECURSIVE              = NO

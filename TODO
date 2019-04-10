@@ -7,30 +7,14 @@ Things to fix and sort out the version on Github (in no particular order)...
 6. What goes to logfile? and perhaps control of verbosity (issue #5) (JS)
 7. Forcefield from file (issue #4 - check resolved) (JS)
 8. Topology from file (issue #3) (JS)
-9. Use a makefile to build it all in the root directory...
+9. Use a makefile to build it all in the root directory... See below
 10 I do not like the boost library!!!
 
 ===================================================
 
-build process and errors this version
-cd NVT
-make
-*** fatal error: boost/numeric/ublas/vector.hpp: No such file or directory (as includes -lboost_program_options)
-sudo apt-get install libboost-all-dev
-make
-cd ../config2eps
-make (compiles fine)
-cd ../makeconfig
-make
+9. Recursive make of the suite, documentation and tests
 
-cd doxygen
-doxygen doxyfile
-*** blank output... edit doxyfile to change inputs
-
-What should happen form make... (9)
-Type make in root directory...
-1. Verify everything is OK and dependencies are met?
-2. Make in subfolders as necessary different possible targets.
+Make in subfolders as necessary different possible targets.
 	documentation	*** (DONE) just the documentation 
 	install		*** install the binaries in a sensible place (~/bin)
 	all		*** (DONE) binaries and documentation (default)
@@ -39,12 +23,32 @@ Type make in root directory...
 	config		*** check dependencies etc
 	test		*** run tests and produce report
 
-====================================================
-
-Documentation improvements
-1. The programmes and their usage as well as the different files and their formats. Users manual.
-2. Dependencies
-ls
+Add documentation to makefiles...
 
 ====================================================
+
+1. Documentation improvements with doxygen
+
+First page with some nice stuff on it
+The various programmes in the suite and their usage (User manual).
+The different files and their formats. (Users manual).
+
+Slowly getting there with markdown files carcass is there 'just' need
+to flesh it out.
+
+====================================================
+
+makeconfig fails with unhelpful error messages, and now requires output file rather
+than sending to stdout... also all parameters need to be named where previous version just took
+list of object numbers. NOT BACKWARD COMPATIBLE new strange syntax.
+
+Is this fixable? Make usage appear in the documentation...
+POSIX recommendations...
+1> No options EXCEPT -o outfile_name
+2> required ordered parameters x_size y_size n_type1...
+
+implementing this SHOULD only modify makeconfig.cpp is the problem with the use of boost libraries.
+
+====================================================
+
 
