@@ -104,8 +104,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include "integrator.h"
-#include "common.h"
+#include "../Classes/integrator.h"
+#include "../Classes/common.h"
 
 // program_options, to parse arguments
 #include <boost/program_options.hpp>
@@ -142,17 +142,18 @@ int main(int argc, char** argv) {
     // Objects in headers
     config      *current_state;
     config      **state_h;
-    // Todo: create here an empty one and
-    // later fill it with stuff from a forcefield file
-    force_field *the_forces = new force_field(); // This memory is lost
+
+    force_field *the_forces = NULL; 
     integrator  *the_integrator = NULL;
-    // Here, an empty topology
-    topology    *a_topology;
+    topology    *a_topology = NULL;
+
+    std::ofstream log_file;
 
     int         N1;
     double      U1, V1;
     int         i, step;
 
+    /* Need to redo command line handling */
     // Barbaric hard-coded defaults
     int         it_max  =  10000;
     int         n_print =   1000;
@@ -196,27 +197,25 @@ int main(int argc, char** argv) {
     
     // Start the log file
     cout << "Opening log file '" << log_name << "'\n";
-    ofstream _log(log_name.c_str());
+    log_file.open(log_name, std::ofstream::out);
     // Check if we could open it
-    if(!_log) {
+    if(!log_file) {
         cout << "Cannot open file " << log_name << " for writing, exiting ...\n";
         return 1;
     }
     // Write the header of the log file
-    _log << "hard_discs2 log file - NVT\n\n"; 
+    log_file << "hard_discs2 log file - NVT\n\n"; 
     
     // Get the two file names
     if (vm.count("initial")) {
         cout << "Configuration file: " << in_name << "\n";
-        _log << "Configuration file: " << in_name << "\n";
+        log_file << "Configuration file: " << in_name << "\n";
     }
     
     if (vm.count("final")) {
         cout << "Output configuration file: " << out_name << "\n";
-        _log << "Output configuration file: " << out_name << "\n";
+        log_file << "Output configuration file: " << out_name << "\n";
     }
-
-    a_topology = new topology();    // Create or load the object topologies
 
     // Load the initial configuration
     /* On catching exceptions from constructors
@@ -227,46 +226,38 @@ int main(int argc, char** argv) {
     // Should maybe pass a stream to the constructor, or a name is ok ?
     current_state = new config(in_name);
     
-    // Now update the (empty) force field with the force field file
+    // Load the force field from the force field file
     if (vm.count("forcefield")) {
         cout << "\nLoading the force-field from the file '" << ff_filename << "'\n";
     }
-    the_forces->update(ff_filename);
+    the_forces = new force_field(ff_filename.c_str());
     cout << "Force-field loaded\n";
-    _log << "\nForce-field file: " << ff_filename << "\n";
-    // Write a summary of the force-field in the log
-    the_forces->write(_log);
+    log_file << "\nForce-field file: " << ff_filename << "\n";
+    the_forces->write(log_file);
     
-    // And here give the radiuses to the topology
-    // To create the atoms at the right place
+    // Load the topology from the topology file
     if (vm.count("topology")) {
         cout << "Loading the topology from the file '" << topology_file << "'\n";
     }
-    a_topology->fill_topology(the_forces->radius, topology_file);
+    a_topology = new topology( topology_file.c_str() );    // Create or load the object topologies
     cout << "Topology loaded\n";
-    _log << "Topology file: " << topology_file << "\n";
-    // And write a summary of the topology in the log
-    a_topology->write(_log); 
-    
+    log_file << "Topology file: " << topology_file << "\n";
+    // a_topology->write(log_file);                          // Does not exist currently
+ 
     // Add the topology to the configuration.
-    // Need to add the topology to the configuration after 
-    // Knowing about the force-field, for multi-atoms topologies
     current_state->add_topology(a_topology);
-    
-    // Debug - write the topology to a file from the config
-    //~ current_state->write_topology(_log);
-    
+        
     U1 = current_state->energy(the_forces);
     V1 = current_state->area();
     N1 = current_state->n_objects();
 
     // Print report of state, both in terminal and log
     cout << "Configuration loaded\n\n";
-    _log << "Configuration loaded\n";
+    log_file << "Configuration loaded\n";
     cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
     cout << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
-    _log << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
-    _log << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+    log_file << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+    log_file << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
 
     dl_max = simple_min(current_state->x_size, current_state->y_size)/2.0;
 
@@ -295,9 +286,9 @@ int main(int argc, char** argv) {
         cout << "After initial adjustments:\n";
         cout << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
         cout << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
-        _log << "After initial adjustments:\n";
-        _log << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
-        _log << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+        log_file << "After initial adjustments:\n";
+        log_file << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % P1 % beta;
+        log_file << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
     }
 
     // Start NVT montecarlo loop
@@ -322,11 +313,11 @@ int main(int argc, char** argv) {
                 % (the_integrator->n_good)
                 % (the_integrator->n_good + the_integrator->n_bad)
                 % (the_integrator->dl_max);
-        _log << format("After %d steps N = %d, P = %g, beta = %g\n") 
+        log_file << format("After %d steps N = %d, P = %g, beta = %g\n") 
                 % (i+step) % N1 % P1 % beta;
-        _log << format("Area = %g, Density = %g Energy = %g\n") 
+        log_file << format("Area = %g, Density = %g Energy = %g\n") 
                 % V1 % (N1/V1) % U1;
-        _log << format("Moves %d in %d, Dist_max = %g\n\n") 
+        log_file << format("Moves %d in %d, Dist_max = %g\n\n") 
                 % (the_integrator->n_good)
                 % (the_integrator->n_good + the_integrator->n_bad)
                 % (the_integrator->dl_max);
@@ -352,10 +343,10 @@ int main(int argc, char** argv) {
     delete the_forces;
 
     cout << "\n...Done...\n";
-    _log << "\n...Done...\n";
+    log_file << "\n...Done...\n";
 
     // And close the log and output
-    _log.close();
+    log_file.close();
     _out.close();
     return 0;
 }

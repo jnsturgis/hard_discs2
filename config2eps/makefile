@@ -2,8 +2,8 @@ CC = g++
 CFLAGS = -Wall
 LIB_FLAGS = 
 EXEC_NAME = config2eps
-SRC = $(wildcard *.cpp)
-OBJ = $(SRC:.cpp=.o) ../NVT/config.o ../NVT/o_list.o ../NVT/topology.o ../NVT/force_field.o ../NVT/atom.o ../NVT/object.o
+SRC = $(wildcard *.cpp ../Classes/*.cpp)
+OBJ = $(SRC:.cpp=.o) 
 
 all : $(EXEC_NAME)
 
@@ -15,3 +15,4 @@ config2eps : $(OBJ)
 
 clean :
 	rm -f $(EXEC_NAME) $(OBJ)
+

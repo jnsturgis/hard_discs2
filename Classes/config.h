@@ -85,27 +85,34 @@ public:
     config();                       ///< Create a new empty conformation.
     config(config& orig);           ///< Copy an existing conformation.
     config(config *orig);           ///< Copy an existing conformation from a pointer.
-    config(std::string in_file);        ///< Create a conformation from a file.
+    config(std::string in_file);    ///< Create a conformation from a named file.
+    config(std::istream& source);           ///< Create from a file.
+
     virtual ~config();              ///< Destroy a conformation
 
+/* TODO Class interface needs cleaning */
     void    add_topology(topology *a_topology); ///< Attach a topology to the configuration
-    int    write_topology(std::ofstream& _log); ///< Write the topology, debug
     void    add_object(object *orig); ///< Insert the object orig into the configuration
-    int     write(std::ofstream& _out);    ///< Write the conformation to the dest file
-    void    ps_atoms(force_field *the_forces, std::ofstream& _out);   ///< Write the postscript part for the atoms.
+    int     write(std::ofstream& dest);    ///< Write the conformation to the dest file (perhaps surplus)
+    int     write(FILE *dest);     ///< Write the conformation to the dest file
+    void    ps_atoms(std::ostream& dest);   ///< Write the postscript part for the atoms.
     //~ void    ps_box(FILE *dest);     ///< Write postscript path for the bounding box.
     //~ void     ps_box(std::ofstream& _out);     ///< Write postscript path for the bounding box.
 
-    double  energy(force_field *& the_force);   ///< Calculate the energy of a conformation using a force field.
+    double  energy(force_field *& 
+                      the_force);   ///< Calculate the energy of a conformation using a force field.
     double  area();                 ///< The total area of the configuation.
     int     object_types();         ///< The number of different object types.
     int     n_objects();            ///< The number of objects in configuration.
 
     void    expand( double dl );    ///< Expand the surface area by a factor dl.
-    void    move(int obj_number, double dl_max);  ///< Move an object in the configuration.
-    void    rotate(int obj_number, double theta_max); ///< Rotate an object in the configuration.
-    void    invalidate_within(double distance, int index ); ///< Mark energies for recalculation.
+    void    move(int obj_number, 
+                   double dl_max);  ///< Move an object in the configuration.
+    void    rotate(int obj_number, 
+                 double theta_max); ///< Rotate an object in the configuration.
 
+    void    invalidate_within(double distance, 
+                       int index ); ///< Mark energies for recalculation.
     double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
 
     /* Variables should be more private - the copy function is the main problem */
@@ -116,6 +123,8 @@ public:
     
     int         get_n_top();        ///< how many topologies ?
 private:
+    void	config_read(std::istream& src); //< Helper function reading from a stream.
+
     double      saved_energy;       ///< The last result of energy evaluation.
     o_list      obj_list;           ///< The objects in the configuration
     topology    *the_topology;      ///< The object topology file.

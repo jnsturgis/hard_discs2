@@ -15,7 +15,7 @@
  * the output area.
  *
  * Usage:
- *          config2eps < config_file > eps_file.
+ *          config2eps [-t topology] < config_file > eps_file.
  *
  * \todo        Non square areas scaled correctly.
  * \todo        More control on preamble and ending of output.
@@ -24,10 +24,15 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-#include "../NVT/config.h"
+#include "../Classes/config.h"
 #include <boost/program_options.hpp>
 
 using namespace std;
+
+void
+usage(){
+    cerr << "Usage: config2eps [-t topo_file] [< config_file] [> eps_file]\n";
+}
 
 string preamble = ""
 "%!PS-Adobe-2.0 EPSF-1.2 \n"
@@ -169,74 +174,73 @@ string ending = ""
  *
  */
 int main(int argc, char** argv) {
-    topology    *a_topology    = new topology();
-    string      in_name;
-    string      out_name;
+    topology    *a_topology;
     double      scale;
-    string      ff_filename;
-    string      topology_file;
-    
-    // Command line handling
-    namespace po = boost::program_options;
-    po::options_description desc("Generic options");
-    desc.add_options()
-        ("help", "Produce help message")
-        // It seems easy to simply store things in variables
-        ("config,c", po::value<string>(&in_name)->required(), "Configuration (input)")
-        ("output,o", po::value<string>(&out_name)->required(), "Postscript output (output)")
-        ("forcefield,f", po::value<string>(&ff_filename)->default_value("forcefield"), "Force-field filename (default 'forcefield')")
-        ("topology,t", po::value<string>(&topology_file)->default_value("topology"), "Topology filename (default 'topology')")
-    ;
+    string      topo_name;
+    bool        verbose = false;
+    char        c;
 
-    // Store arguments
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    
-    // Print the help if needed
-    if (vm.count("help") || argc == 1) {
-        cout << desc << "\n";
-        return 1;        
+    // Getopt based argument handling.
+
+    while( ( c = getopt (argc, argv, "vt:") ) != -1 )
+    {
+        switch(c)
+        {
+            case 'v': verbose = true;
+                break;
+            case 't':
+                if (optarg) topo_name.assign(optarg);
+                break;
+            case '?':				// Something wrong.
+                if (optopt == 't' ){
+                    std::cerr << "The -" << optopt << "option is missing a parameter!\n";
+                } else {
+                    std::cerr << "Unknown option " << optopt << "!\n";
+                }
+            default :                           // Something very wrong.
+                usage();
+                return 1;
+        }
     }
-    
-    po::notify(vm);
-    
-    // Get the configuration
-    if (vm.count("config")) {
-        cout << "Configuration file: " << in_name << "\n";
+    if( verbose ){                              // Report on situation
+        std::cerr << "Verbose flag set\n";
     }
-    
-    config      *current_state = new config(in_name);
-    force_field *the_forces    = new force_field();
-    
-    // Need to populate the force-field with the same force-field file
-    the_forces->update(ff_filename);
-    
-    // And populate the topology
-    a_topology->fill_topology(the_forces->radius, topology_file);
 
-    // Add it to the configuration
-    current_state->add_topology(a_topology);
-    scale = 8.0/max(current_state->x_size,current_state->y_size);
-
-    // Open a stream to write the output
-    ofstream _out(out_name.c_str());
-    
-    // Check if we could open it
-    if(!_out) {
-        cout << "Cannot open file " << out_name << ", exiting ...\n";
+    if(( argc - optind ) > 0 ){			// Check enough parameters
+        std::cerr << "Too many parameters!\n";
+        usage();
         return 1;
     }
+    
+    // Get the configuration
+    
+    config      *current_state = new config(std::cin);
+        
+    if( topo_name.length() > 0 ){			// Why does topology depend on force field???!!!
+        a_topology = new topology(topo_name.c_str());   // Need to implement
+    } else {
+        a_topology = new topology(1.0);		// Default topology 1 unit circle
+    }
+
+    current_state->add_topology(a_topology);         // Assocuate topology with the configuration.
+    if( verbose ){
+        std::cerr << "Set up topology:";
+        a_topology->write( stderr );
+        std::cerr << "================";
+    }
+
+
+    scale = 8.0/max(current_state->x_size,current_state->y_size);
 
     // Write in it
-    _out << preamble;
-    _out << scale;
-    _out << " dup scale \n";
-    _out << 0.5/scale;
-    _out << " UL\n";
-    current_state->ps_atoms(the_forces, _out);
-    _out << ending;
+    std::cout << preamble;
+    std::cout << scale;
+    std::cout << " dup scale \n";
+    std::cout << 0.5/scale;
+    std::cout << " UL\n";
+    current_state->ps_atoms( std::cout );
+    std::cout << ending;
 
-    delete the_forces;
     delete current_state;
     delete a_topology;
 

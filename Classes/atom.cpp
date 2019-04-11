@@ -15,6 +15,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <string.h>
 #include "common.h"
 #include "atom.h"
 #include <boost/format.hpp>
@@ -31,8 +32,11 @@ using boost::format;
  *
  * \todo   Implement this constructor.
  */
-atom::atom(FILE *src) {
-    fscanf(src, "%d %lf %lf\n", &type, &x_pos, &y_pos);
+atom::atom() {
+    type =
+    x_pos =
+    y_pos = 0;
+    color[0] = '\0';
 }
 
 /** \brief Constructor for an atom of given type and position
@@ -42,10 +46,11 @@ atom::atom(FILE *src) {
  *  \param  y the atoms y position relative to the object center
  *  \return the new atom
  */
-atom::atom(int t, double x, double y){
+atom::atom(int t, double x, double y, const char *col){
     type  = t;
     x_pos = x;
     y_pos = y;
+    strcpy( color, col );
 }
 
 /** \brief Constructor reproducing an original atom and a copy.
@@ -54,9 +59,7 @@ atom::atom(int t, double x, double y){
  *  @return the copied atom.
  */
 atom::atom(const atom& orig) {
-    type  = orig.type;
-    x_pos = orig.x_pos;
-    y_pos = orig.y_pos;
+    copy(orig);
 }
 
 /** Destructor for atoms (virtual).
@@ -71,10 +74,19 @@ atom::~atom() {
  *  \return int         The return value (error status) from the
  *                      print call.
  */
-//~ int     atom::write(FILE* dest){
-    //~ return fprintf(dest, "%3d %9g %9g\n", type, x_pos, y_pos);
-//~ }
-//~ int  atom::write(std::ofstream& _log){
-    //~ _log << format("%3d %9g %9g\n") % type % x_pos % y_pos;
-    //~ return 1;
-//~ }
+int     atom::write(FILE* dest){
+    return fprintf(dest, "%3d %9g %9g %s\n", type, x_pos, y_pos, color);
+}
+
+void
+atom::read(FILE *source ){
+    fscanf(source, "%d %lf %lf %s\n", &type, &x_pos, &y_pos, &color[0]);
+}
+
+void
+atom::copy(const atom& orig ){
+    type  = orig.type;
+    x_pos = orig.x_pos;
+    y_pos = orig.y_pos;
+    strcpy( color, orig.color );
+}

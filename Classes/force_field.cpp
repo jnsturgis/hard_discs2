@@ -6,12 +6,12 @@
 
 #include "common.h"
 #include "force_field.h"
+#include <cstring>
+#include <ctype.h>
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 #define  BIGVALUE   10E6
 
@@ -21,19 +21,10 @@ using boost::format;
 using namespace std;
 
 force_field::force_field() {
-
-    // Empty force-field !
-    cut_off    = 0;
-    // Except length
+    cut_off    = 2.0;
     length     = 1.0;
     type_max   = 0;
     big_energy = BIGVALUE;
-    
-    //~ for( i=0; i< type_max; i++ ){
-        //~ radius[i] = my_radius[i];
-        //~ color[i]  = my_color[i];
-        //~ for( j = 0; j < type_max; j++ ) energy[i][j] = my_energy[i][j];
-    //~ }
 }
 
 force_field::force_field(const force_field& orig) {
@@ -50,7 +41,113 @@ force_field::force_field(const force_field& orig) {
     }
 }
 
-force_field::~force_field() {
+force_field::force_field( const char *file_name ){
+    FILE *source;
+    if(( source = fopen( file_name, "r" )) != NULL ){
+        read_force_field( source );
+        fclose( source );
+    } else {
+        throw std::runtime_error("Error opening file");
+    }
+}
+
+force_field::force_field( FILE *source ){
+    read_force_field( source );
+}
+
+force_field::force_field( float r ){
+    // Default repulsive force field
+    cut_off    = 2*r;
+    length     = 1.0;
+    type_max   = 1;
+    big_energy = BIGVALUE;
+    
+    radius.resize(1);
+    color.resize(1);
+    energy.resize(1,1);
+
+    radius[0] = r;
+    color(0) = "red" ;		// Should not be here but fix later
+    energy(0,0) = 0.0;
+}
+
+#define	COMMENTCHAR	'#'
+
+bool
+force_field::is_comment( char *line ){
+//  Comments are lines of whitespace or lines
+//  That start (possibly after whitespace) with
+//  COMMENTCHAR...
+    int i;
+    while( line[i] != '\0' ){
+        if( isspace( line[i] )) i++;
+        else
+            return( line[i] == COMMENTCHAR );
+    }
+    return( true );
+}
+
+void
+force_field::read_force_field( FILE *source ){
+/*
+**  Need to add more error handling and checking,
+**  Need to add documentation.
+**  Should relax formatting restrictions.
+*/
+    char	*line = NULL;
+    size_t	len = 0;
+    ssize_t     read;
+    int		logical_line = 0;
+    int         line_number = 0;
+    int		i, j = 0;
+    double       number;
+    char	data[32];			        // 32 is maximum length of a color
+
+    while(( read = getline( &line, &len, source )) != -1 ){
+        line_number++;
+        if( !is_comment( line )){
+            switch( logical_line ){
+            case 0: sscanf( line, "%d ", &type_max );	// Number of different atom types
+                    if( type_max <= 0 )                 // Sanity check
+                        throw std::runtime_error( "Error in force field file Line number "
+                            + std::to_string(line_number)
+                            + " : Invalid number of atom types "
+                            + std::to_string(type_max) );
+                    radius.resize( type_max );          // Resize arrays as necessary.
+                    color.resize(type_max);
+                    energy.resize(type_max, type_max);
+                    logical_line++;                     // Move on
+                    break;
+            case 1: for( i = 0; i < type_max; i++ ){
+                        sscanf( line, "%lf", &number );
+                        radius[i] = number;
+                    }
+                    logical_line++;
+                    break;
+            case 2: for( i = 0; i < type_max; i++ ){
+                        sscanf( line, "%s", &data );
+                        color(i) = data;
+                    }
+                    logical_line++;
+                    break;
+            case 3: sscanf( line, "%lf %lf", &cut_off, & length );	// interaction cutoff distance and length scale.
+                    logical_line++;
+                    break;
+            case 4: for( i = 0; i < type_max; i++ ){    // Read in energy matrix
+                        sscanf( line, "%lf", &number );
+                        energy(i,j) = number;
+                    }
+                    if( ++j == type_max )
+                        logical_line++;
+                    break;
+            default:
+                    break;
+           }
+        }
+    }
+}
+
+force_field::~force_field() {                           // Probably need to get rid of arrays.
 }
 
 // Update a force field (empty or not) with a file
@@ -60,9 +157,9 @@ void force_field::update(std::string ff_filename) {
     double      temp_number;
     string      temp_char;
     int         n_check = 0;
+    ifstream ff(ff_filename.c_str());
     
     // Open a stream of the file
-    ifstream ff(ff_filename.c_str());
     
     // Get the first line
     getline(ff, line);
@@ -190,6 +287,10 @@ force_field::interaction(int t1, int t2, double r) {
 
 double  force_field::size(int t1){
     return radius[t1];
+}
+
+void force_field::write(FILE *dest){
+    assert( false );
 }
 
 void force_field::write(std::ofstream& _log){

@@ -1,0 +1,16 @@
+4
+red    1
+green  2
+blue   0.5
+orange 0.5
+2
+Disk
+1
+0 0.0 0.0 red
+Square
+4
+2 -1.0 -1.0 green
+2 -1.0  1.0 blue
+3  1.0  1.0 orange
+3  1.0 -1.0 red
+

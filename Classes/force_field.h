@@ -48,7 +48,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
-using namespace boost::numeric::ublas;
+using namespace boost::numeric::ublas;      // For vector and matrix
 
 // The forcefield is currently read from a file.
 
@@ -56,21 +56,30 @@ class force_field {
 public:
     force_field();                          ///< Constructor default
     force_field(const force_field& orig);   ///< Constructor with copy
+    force_field(const char *filename);	    ///< Constructor from named file
+    force_field(FILE *source);		    ///< Constructor from file pointer
+    force_field(const float size);          ///< Constructor of default hard disc force field
     virtual ~force_field();                 ///< Destructor
-    void         update(std::string ff_filename);
+
+    void        update(std::string ff_filename);
     double      interaction(int t1, int t2, double r); ///< Calculate interaction energy
     double      size(int t1);               ///< The hard core size of an atom type t1.
-    void         write(std::ofstream& _log);        ///< Write the forcefield to file
-    const char  *get_color(int t);          ///< Color for plot output
-    double      cut_off;                    ///< Distance cutoff between objects
+    void        write(FILE *dest);          ///< Write the forcefield to file
+    void        write(std::ofstream& _log); ///< Write the forcefield to file should get rid of this
+    const char  *get_color(int t);          ///< Color for plot output should get rid of this (color in atoms)
+    double      cut_off;                    ///< Distance cutoff between objects (part of integrator not force field)
     double      big_energy;                 ///< Large value less than infinity.
-    vector<double>      radius;        ///< Atom radii
+
+    vector<double>      radius;             ///< Atom radii (should not be here atom properties)
 private:
+    void        read_force_field(FILE *source);	    ///< Constructor from file helper routine
+    bool	is_comment( char *line );   ///< Check if line from a file is a comment...
+
     int         type_max;                   ///< The number of different atom types
     double      length;                     ///< Interaction length (probably should be array)
     int         cutoff;                     ///< The cutoff
-    vector< std::string>  color;       ///< Atom colors for postscript
-    matrix<double>      energy;        ///< Pairwise interaction well depths.
+    vector< std::string>  color;            ///< Atom colors for postscript (should not be here)
+    matrix<double>      energy;             ///< Pairwise interaction well depths.
 };
 
 #endif /* FORCE_FIELD_H */
