@@ -82,7 +82,8 @@ bool topology::check() {			// Should also check all molecules and names!
         ( n_atom_types == atom_sizes.size() ) );
 }
 
-void topology::read_topology(FILE *source) {	/// @todo Error handling and comments
+void
+topology::read_topology(FILE *source) {	/// @todo Error handling and comments
     size_t	i;
     char	name[64];
 
@@ -110,7 +111,20 @@ topology::write(FILE *dest){
     fprintf( dest, "%lu\n", n_molecules );
     for( i = 0; i < n_molecules; i++ )
         molecules(i).write( dest );
+    return true;
+}
 
+int
+topology::write(ostream& dest){
+    int	        i;
+
+    dest << boost::format("%lu\n") % n_atom_types;
+    for( i = 0; i < n_atom_types; i++ ){
+        dest << boost::format("%s %lf\n") % atom_names(i).c_str() % atom_sizes(i);
+    }
+    dest << boost::format("%lu\n") % n_molecules;
+    for( i = 0; i < n_molecules; i++ )
+        molecules(i).write( dest );
     return true;
 }
 

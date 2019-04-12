@@ -65,7 +65,7 @@ public:
     double      interaction(int t1, int t2, double r); ///< Calculate interaction energy
     double      size(int t1);               ///< The hard core size of an atom type t1.
     void        write(FILE *dest);          ///< Write the forcefield to file
-    void        write(std::ofstream& _log); ///< Write the forcefield to file should get rid of this
+    void        write(std::ostream& dest);  ///< Write the forcefield to a stream.
     const char  *get_color(int t);          ///< Color for plot output should get rid of this (color in atoms)
     double      cut_off;                    ///< Distance cutoff between objects (part of integrator not force field)
     double      big_energy;                 ///< Large value less than infinity.

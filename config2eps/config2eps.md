@@ -12,8 +12,19 @@ the color given in the force field. The area of the forcefield is scaled to fit 
 the output area.
 
     Usage:
-        config2eps < config_file > eps_file.
+        config2eps [-t topology] < config_file > eps_file.
+
+The optional argument '-t topology' allows you to define a topology file and so 
+control the representation of the different objects in the configuration. 
+The format of the topology file is described [here](@ref topology_file).
+
+The input is expected to be a configuration file describing the box, and
+the different objects. The structure of this file is documented [here](@ref config_file).
+
+The output is (should be) a valid encapsulated postscript file.
 
 \todo    Introduce non square areas scaled correctly.
 \todo    More control on preamble and ending of output.
+\todo	 More error checking reading topology file.
+\todo    More error checking reading the configuration (not just a crash).
 

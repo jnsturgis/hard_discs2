@@ -1,56 +1,73 @@
 /**
- * \file    makeconfig.cpp
- * \author  James Sturgis
- * \brief   Main function for makeconfig application
- * \date    17 April 2018
- * \version 1.0
+ * @file    makeconfig.cpp
+ * @author  James Sturgis
+ * @brief   Main function for makeconfig application
+ * @date    17 April 2018
+ * @version 1.0
  *
  * This file contains the main routine for the make_config program that is part of
  * the Very Coarse Grained disc simulation programmes.
  *
- * See makeconfig.md for details.
+ * See makeconfig.md for details of usage and file formats.
  */
 
 #include "../Classes/config.h"
-#include "../Classes/common.h"
-#include <stdio.h>
-#include <math.h>
+// #include <stdio.h>
+// #include <math.h>
 #include <iostream>
 #include <unistd.h>
 
 using namespace std;
 
+#define MAX_TESTS	1000
+
+string placement_failure  = ""
+"Fatal Error: Unable to place objects without "
+"collisions! You could try changing the number of "
+"attempts using the -a option, or try placing them "
+"initially in a crystaline array with 'makecrystal', or "
+"try initially placing them in a larger area and then "
+"resizing the configuration with 'shrinkconfig'.";
+
 void usage()
 {
-    cerr << "Usage: makeconfig [-t topo_file][-o out_file][-f force_file][-d scale] \n\t";
-    cerr << "x_size y_size n_obj0 ... \n";
+    std::cerr << "Usage: makeconfig [-v][-p][-t topo_file][-o out_file][-f force_file]"
+        "[-d scale][-a attempts] \n\t x_size y_size n_obj0 ... \n";
 }
 
-int main(int argc, char **argv)
+int 
+main(int argc, char **argv)
 {
     int     	n, c;
     float   	x_size, y_size;
     double  	pos_x, pos_y, orient;
     char  	*out_name, *topo_name, *force_name;
     bool        verbose = false;
+    bool        clash = true;
+    int		max_try = MAX_TESTS;
+    object      *my_object;
 
     config      *a_config = new config();
     force_field	*the_force;
     topology	*a_topology;
+    a_config->is_periodic = false;
 
     float   scale = 1.0;
     out_name = force_name = topo_name = NULL;
 
     // Getopt based argument handling.
 
-    while( ( c = getopt (argc, argv, "vd:f:t:o:") ) != -1 )
+    while( ( c = getopt (argc, argv, "vpd:f:t:o:a:") ) != -1 )
     {
         switch(c)
         {
-            case 'v': verbose = true;
-                break;
+            case 'v': verbose = true; break;
+            case 'p': a_config->is_periodic = true; break;
             case 'd':				// Handle optional arguments
                 if (optarg) scale = std::atof(optarg);
+                break;
+            case 'a':				// Handle optional arguments
+                if (optarg) max_try = std::atof(optarg);
                 break;
             case 'f':
                 if (optarg) force_name = optarg;
@@ -65,14 +82,15 @@ int main(int argc, char **argv)
                 usage();
                 return 0;
             case '?':				// Something wrong.
-                if (optopt == 'd' or optopt == 'f' or optopt =='t' or optopt == 'o' ){
-                    std::cerr << "The -" << optopt << "option is missing a parameter!\n";
+                if (optopt == 'd' or optopt == 'f' or optopt =='t' or 
+                    optopt == 'o' or optopt == 'a' ){
+                    std::cerr << "The -" << optopt << " option is missing a parameter!\n";
                 } else {
                     std::cerr << "Unknown option " << optopt << "!\n";
                 }
             default :                           // Something very wrong.
                 usage();
-                return 1;
+                exit(EXIT_FAILURE);
         }
     }
     if( verbose ){                              // Report on situation
@@ -122,13 +140,22 @@ int main(int argc, char **argv)
     
     for( int i = 0; i < (argc - optind); i++) {
         n = std::atof( argv[ optind+i ] );
-        for(int j = 0; j < n; j++ ){		// Try to place a new object of type i
-
-            pos_x  = rnd_lin(a_config->x_size); // TODO: check OK
-            pos_y  = rnd_lin(a_config->y_size);
-            orient = rnd_lin(M_2PI);
-            a_config->add_object( new object( i, pos_x, pos_y, orient ));
-						// If fail then suggest larger and compress or crystal.
+        for(int j = 0; j < n; j++ ){            // Try to place 'n' new objects of type i
+            clash = true;
+            for( int k = 0; ((k < max_try) && clash ); k++ ){
+                pos_x  = rnd_lin(a_config->x_size);
+                pos_y  = rnd_lin(a_config->y_size);
+                orient = rnd_lin(M_2PI);
+                my_object = new object( i, pos_x, pos_y, orient );
+                clash = a_config->test_clash( my_object );
+                if( clash ) delete my_object;
+            }
+            if( !clash ){
+                a_config->add_object( my_object );
+            } else {
+		std::cerr << placement_failure;
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
@@ -149,6 +176,6 @@ int main(int argc, char **argv)
 
     if( dest != stdout ) fclose( dest );
     delete a_config;
-    return 0;
+    return EXIT_SUCCESS;
 }
 

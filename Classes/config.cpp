@@ -1,5 +1,6 @@
 /**
  * @file        config.cpp  Implementation of the configuration class.
+ * @brief       Implementation of the configuration class to handle molecular organizations.
  * @author      James Sturgis
  * @date        April 6, 2018
  * @version     1.0
@@ -7,11 +8,8 @@
 
 #include <float.h>
 #include <math.h>
-#include <fstream>
-#include <sstream>
 #include <iostream>
 #include "config.h"
-#include "common.h"
 #include <boost/format.hpp>
 
 using boost::format;
@@ -279,7 +277,7 @@ int config::write( FILE *dest ){
  *              correct.
  */
 
-int config::write(std::ofstream& dest){
+int config::write(std::ostream& dest){
     int     i;
     object  *this_obj;
     
@@ -300,6 +298,84 @@ int config::write(std::ofstream& dest){
  */
 int config::n_objects(){
     return obj_list.size();                 // Get size of object list.
+}
+
+/**
+ * This function tests if the new_object can be inserted into the configuration
+ * without generating a clash (as determined by the topology file).
+ *
+ * @param new_object a pointer to a valid object to test for insertion.
+ * @return true if there is a clash otherwise false.
+ *
+ * @todo handle periodic conditions or wall collisions as appropriate.
+ */
+bool
+config::test_clash( object *new_object ){
+    object *my_obj;
+    int max_o_type = the_topology->n_atom_types - 1 ;
+    int o_type1 = simple_min( new_object->o_type, max_o_type );
+    int o_type2;
+    double theta1 = new_object->orientation;
+    double theta2;
+    double t1, dx1, dy1, r1, x1, y1;
+    double t2, dx2, dy2, r2, x2, y2;
+    double r, dx, dy;
+
+    if( !is_periodic ){                     // Check clash with walls.
+        for(int i = 0; i < the_topology->molecules(o_type1).n_atoms; i++ ){
+            t1  =  the_topology->molecules(o_type1).the_atoms(i).type;
+            dx1 =  the_topology->molecules(o_type1).the_atoms(i).x_pos;
+            dy1 =  the_topology->molecules(o_type1).the_atoms(i).y_pos;
+            r1  =  the_topology->atom_sizes(t1);  // Get radius
+                                            // Calculate atom position
+            x1  =  new_object->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
+            y1  =  new_object->pos_y + dx1 * sin(theta1) + dy1 * cos(theta1);
+            if(( x1 < r1 ) || ( (x1 + r1) > x_size ) || ( y1 < r1 ) || 
+                ( (y1 + r1) > y_size ))
+                return true;
+        }
+    }
+                                            // Loop over the objects.
+    for(int i = 0; i < obj_list.size(); i++){
+        my_obj  = obj_list.get(i);
+        theta2  = my_obj->orientation;
+        o_type2 = simple_min( my_obj->o_type, max_o_type );
+
+                                            // Loop over the atoms my_obj
+        for(int j = 0; j < the_topology->molecules(o_type2).n_atoms; j++ ){
+                                            // Get atom information
+            t2  =  the_topology->molecules(o_type2).the_atoms(j).type;
+            dx2 =  the_topology->molecules(o_type2).the_atoms(j).x_pos;
+            dy2 =  the_topology->molecules(o_type2).the_atoms(j).y_pos;
+            r2  =  the_topology->atom_sizes(t2);      // Get radius
+                                            // Calculate atom position
+            x2  =  my_obj->pos_x + dx2 * cos(theta2) - dy2 * sin(theta2);
+            y2  =  my_obj->pos_y + dx2 * sin(theta2) + dy2 * cos(theta2);
+
+            for( int k = 0; k < the_topology->molecules(o_type1).n_atoms; k++ ){
+                                            // Get atom information
+                t1  =  the_topology->molecules(o_type1).the_atoms(j).type;
+                dx1 =  the_topology->molecules(o_type1).the_atoms(j).x_pos;
+                dy1 =  the_topology->molecules(o_type1).the_atoms(j).y_pos;
+                r1  =  the_topology->atom_sizes(t1);  // Get radius
+                                            // Calculate atom position
+                x1  =  new_object->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
+                y1  =  new_object->pos_y + dx1 * sin(theta1) + dy1 * cos(theta1);
+
+                dx = (x2-x1);
+                dy = (y2-y1);
+                                            // Handle periodic conditions
+                if( dx > (x_size - r1 - r2 )) dx -= x_size;
+                if( dx < (r1 + r2 - x_size )) dx += x_size;
+                if( dy > (y_size - r1 - r2 )) dy -= y_size;
+                if( dy < (r1 + r2 - y_size )) dy += y_size;
+
+                r = dx*dx+dy*dy;
+                if( r < ((r1+r2)*(r1+r2))) return (true);
+            }
+        }
+    }
+    return (false);
 }
 
 /**
@@ -456,7 +532,8 @@ void    config::add_object(object* orig ){
  * \todo use return value for error handling.
  */
 
-void    config::ps_atoms( std::ostream& dest ){
+void    
+config::ps_atoms( std::ostream& dest ){
 /*  Need to reorganize for topology with molecules...
     should incorporate atom draw radius in topology (so no FF needed)... */
 
@@ -464,24 +541,39 @@ void    config::ps_atoms( std::ostream& dest ){
     double  theta, dx, dy, r, x, y;
     int     t, lr, tb;
     char    *my_color;
+    int     max_o_type, o_type;
+
+    
+    if ( !the_topology ){
+         std::cerr << "Generating postscript images from a configuration "
+            "requires setting a topology.";
+         exit(1);
+    }
+
+    max_o_type = the_topology->n_atom_types -1 ;
+
                                             // Loop over the objects.
     for(int i = 0; i < obj_list.size(); i++){
         my_obj = obj_list.get(i);
         theta  = my_obj->orientation;
+        o_type = my_obj->o_type;
+        if( o_type > max_o_type ){          // Use object type 0 if not defined
+            o_type = 0;
+        }
                                             // Loop over the atoms
-        for(int j = 0; j < the_topology->molecules(my_obj->o_type).n_atoms; j++ ){
+        for(int j = 0; j < the_topology->molecules(o_type).n_atoms; j++ ){
                                             // Get atom information
-            t  =  the_topology->molecules(my_obj->o_type).the_atoms(j).type;
-            dx =  the_topology->molecules(my_obj->o_type).the_atoms(j).x_pos;
-            dy =  the_topology->molecules(my_obj->o_type).the_atoms(j).y_pos;
+            t  =  the_topology->molecules(o_type).the_atoms(j).type;
+            dx =  the_topology->molecules(o_type).the_atoms(j).x_pos;
+            dy =  the_topology->molecules(o_type).the_atoms(j).y_pos;
             r  =  the_topology->atom_sizes(t);      // Get radius
                                             // Calculate atom position
             x  =  my_obj->pos_x + dx * cos(theta) - dy * sin(theta);
             y  =  my_obj->pos_y + dx * sin(theta) + dy * cos(theta);
-            my_color = the_topology->molecules(my_obj->o_type).the_atoms(j).color;
+            my_color = the_topology->molecules(o_type).the_atoms(j).color;
                                             // Write postscript snippet for atom.
-            dest << format("newpath %g %g %g %s moveto fcircle \n") 
-                    % r % x % y % (my_color);
+            dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                    % x % y % r % (my_color);
 
                                             // Handle intersections with the border
             lr = 0; tb = 0;                 // need up to 4 copies.
@@ -490,17 +582,17 @@ void    config::ps_atoms( std::ostream& dest ){
             if ( y < r ) tb = -1;
             if ( y > y_size - r ) tb = +1;
             if (lr != 0 ){                  // Copy on other side
-                dest << format("newpath %g %g %g %s moveto fcircle \n")
-                    % r % (lr*x-lr*x_size) % y % (my_color);
+                dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                    % (x-lr*x_size) % y % r % (my_color);
             }
             if (tb != 0 ){                  // Vertical copy
-                dest << format("newpath %g %g %g %s moveto fcircle \n")
-                    % r % x % (tb*y-tb*y_size) % (my_color);
+                dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                    % x % (y-tb*y_size) % r % (my_color);
             }
             if ((lr != 0 )&&(tb != 0)){     // In the corner!
-                dest << format("newpath %g %g %g %s moveto fcircle \n")
-                    % r % (lr*x-lr*x_size) % (tb*y-tb*y_size)
-                    % ( my_color );
+                dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                    % (x-lr*x_size) % (y-tb*y_size)
+                    % r % ( my_color );
             }
         }
     }

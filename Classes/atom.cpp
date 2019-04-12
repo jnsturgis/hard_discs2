@@ -1,36 +1,23 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  * @file    atom.cpp  Implementation file for the atom class.
  * @author  James Sturgis
  * @date    April 6, 2018
  * @class   atom atom.h "atom.h"
+ *
+ * @todo    Replace c strings with c++ strings.
+ * @todo    Replace FILE * with istream and ostream.
+ * @todo    Error management and exceptions.
+ * @todo    Improve documentation and add class methods (see documentation)
  */
 
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <string.h>
-#include "common.h"
+#include <string.h> // for strcpy()
 #include "atom.h"
+
 #include <boost/format.hpp>
 using boost::format;
 
-
 /**
- * \brief  Constructor reading an atom from a file.
- * \param  src File descriptor to read the new atom from.
- * \return the new atom
- *
- * If there is an error during the read then the new atoms
- * type will be -1. Currently not implemented.
- *
- * \todo   Implement this constructor.
+ * \brief  Constructor creating an empty (but valid) atom.
  */
 atom::atom() {
     type =
@@ -44,7 +31,7 @@ atom::atom() {
  *  \param  t the atom type.
  *  \param  x the atoms x position relative to the object center
  *  \param  y the atoms y position relative to the object center
- *  \return the new atom
+ *  \param  col pointer to a c_type string containing a postscript acceptable representation of the color.
  */
 atom::atom(int t, double x, double y, const char *col){
     type  = t;
@@ -53,7 +40,7 @@ atom::atom(int t, double x, double y, const char *col){
     strcpy( color, col );
 }
 
-/** \brief Constructor reproducing an original atom and a copy.
+/** \brief Constructor reproducing an original atom via a copy.
  *
  *  @param orig The atom to copy in position and type.
  *  @return the copied atom.
@@ -62,7 +49,7 @@ atom::atom(const atom& orig) {
     copy(orig);
 }
 
-/** Destructor for atoms (virtual).
+/** \brief Destructor for atoms (virtual). No complex parts.
  */
 atom::~atom() {
 }
@@ -74,15 +61,37 @@ atom::~atom() {
  *  \return int         The return value (error status) from the
  *                      print call.
  */
-int     atom::write(FILE* dest){
+int     
+atom::write(FILE* dest){
     return fprintf(dest, "%3d %9g %9g %s\n", type, x_pos, y_pos, color);
 }
 
+/** \brief Write the atom to a stream.
+ *
+ *  \param dest ofstream&   The destination output stream.
+ *  \return int         The return value (error status).
+ */
+int     
+atom::write(std::ostream& dest){
+    dest << boost::format("%3d %9g %9g %s\n") % type % x_pos % y_pos % color;
+    return EXIT_SUCCESS;
+}
+
+/** \brief Read an atom description from a file.
+ *
+ *  \param dest FILE*   The file pointer to the file open for reading.
+ *  On exit the values of the atom descriptors are changed.
+ */
 void
 atom::read(FILE *source ){
     fscanf(source, "%d %lf %lf %s\n", &type, &x_pos, &y_pos, &color[0]);
 }
 
+/** \brief Copy an atom description to this atom.
+ *
+ *  \param orig const atom&   Pointer to the original atom.
+ *  On exit the values of the atom descriptors are changed.
+ */
 void
 atom::copy(const atom& orig ){
     type  = orig.type;
@@ -90,3 +99,4 @@ atom::copy(const atom& orig ){
     y_pos = orig.y_pos;
     strcpy( color, orig.color );
 }
+

@@ -43,6 +43,11 @@ force_field::force_field(const force_field& orig) {
 
 force_field::force_field( const char *file_name ){
     FILE *source;
+    cut_off    = 2.0;
+    length     = 1.0;
+    type_max   = 0;
+    big_energy = BIGVALUE;
+
     if(( source = fopen( file_name, "r" )) != NULL ){
         read_force_field( source );
         fclose( source );
@@ -52,6 +57,11 @@ force_field::force_field( const char *file_name ){
 }
 
 force_field::force_field( FILE *source ){
+    cut_off    = 2.0;
+    length     = 1.0;
+    type_max   = 0;
+    big_energy = BIGVALUE;
+
     read_force_field( source );
 }
 
@@ -293,33 +303,33 @@ void force_field::write(FILE *dest){
     assert( false );
 }
 
-void force_field::write(std::ofstream& _log){
+void force_field::write(std::ostream& dest){ // This should be normal rereadable not logging...
     int i,j;
 
-    _log << "\nSummary of the force-field\n";
-    _log << "Cut off is " << cut_off << "\n";
-    _log << "Length scale is " << length << "\n";
-    _log << "Number of atom types is " << type_max << "\n";
-    _log << "Colors are  [";
+    dest << "\nSummary of the force-field\n";
+    dest << "Cut off is " << cut_off << "\n";
+    dest << "Length scale is " << length << "\n";
+    dest << "Number of atom types is " << type_max << "\n";
+    dest << "Colors are  [";
     for( i=0; i< type_max; i++) {
-        _log << format("%g ,") % color(i);
+        dest << format("%g ,") % color(i);
     }
-    _log << "]\nRadius array is  [";
+    dest << "]\nRadius array is  [";
     for( i=0; i< type_max; i++ ) {
-        _log << format("%7.3g ,") % radius(i);
+        dest << format("%7.3g ,") % radius(i);
     }
-    _log << "]\nEnergy array is [";
+    dest << "]\nEnergy array is [";
     for( i=0; i< type_max; i++ ){
         if( i > 0) {
-            _log << "\n                 ";
+            dest << "\n                 ";
         }
-        _log << "[";
+        dest << "[";
         for(j=0;j<type_max; j++ ){
-            _log << format("%7.3g ,") % energy(i, j);
+            dest << format("%7.3g ,") % energy(i, j);
         }
-        _log << "]";
+        dest << "]";
     }
-    _log << "]\n\n";
+    dest << "]\n\n";
 
 }
 

@@ -47,6 +47,16 @@ molecule::write(FILE *dest){
     return true;
 }
 
+int
+molecule::write(std::ostream& dest){
+    int     i;
+
+    dest << mol_name.c_str() << "\n" << std::to_string(n_atoms) << "\n";
+    for(i=0; i<n_atoms; i++)
+        the_atoms(i).write( dest );
+    return true;
+}
+
 void
 molecule::read(FILE *source){
     int     i;

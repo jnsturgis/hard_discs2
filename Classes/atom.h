@@ -22,6 +22,8 @@
 #define ATOM_H
 
 #include <stdio.h>
+#include <fstream>
+#include "common.h"
 
 #define	MAX_COLOR_LEN	32
 
@@ -35,6 +37,7 @@ public:
     virtual ~atom();            ///< Destructor for atoms
 
     int     write(FILE *dest);  ///< Write the atom descriptor
+    int     write(std::ostream& dest);  ///< Write the atom descriptor
     void    read(FILE *source); ///< Fill in null atom properties from file
     void    copy(const atom& orig);
 

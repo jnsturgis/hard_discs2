@@ -33,6 +33,7 @@ public:
     void rename( std::string a_name );  ///< Change the name of a molecule
 
     int	write(FILE *dest);		///< Write the molecule to an opened file
+    int	write(std::ostream& dest);	///< Write the molecule to a stream
     void read(FILE *dest);              ///< Fill an empty molecule from a file
 
     std::string		mol_name;	///< A name for the molecule

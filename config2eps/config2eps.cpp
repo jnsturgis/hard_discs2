@@ -1,9 +1,9 @@
 /**
- * \file    config2eps.cpp
- * \author  James Sturgis
- * \date    April 12, 2018
- * \version 1.0
- * \brief   Convert a configuration to an eps figure.
+ * @file    config2eps.cpp
+ * @author  James Sturgis
+ * @date    April 12, 2018
+ * @version 1.0
+ * @brief   Convert a configuration to an eps figure.
  *
  * This file contains the main routine for the config2eps program that is part of
  * the Very Coarse Grained disc simulation programmes.
@@ -17,15 +17,13 @@
  * Usage:
  *          config2eps [-t topology] < config_file > eps_file.
  *
- * \todo        Non square areas scaled correctly.
- * \todo        More control on preamble and ending of output.
+ * @todo        Handdle non square areas correctly (not currently implemented in config)
+ * @todo        More control of preamble and ending to personalize figure.
  */
 
-#include <cstdlib>
-#include <string>
 #include <iostream>
 #include "../Classes/config.h"
-#include <boost/program_options.hpp>
+// #include <boost/program_options.hpp>
 
 using namespace std;
 
@@ -34,7 +32,7 @@ usage(){
     cerr << "Usage: config2eps [-t topo_file] [< config_file] [> eps_file]\n";
 }
 
-string preamble = ""
+string prolog = ""
 "%!PS-Adobe-2.0 EPSF-1.2 \n"
 "%%Title: Postscript figure for configuration \n"
 "%%Creator: James \n"
@@ -127,7 +125,9 @@ string preamble = ""
 "dup length dict begin {1 index /FID eq {pop pop} {def} ifelse} forall \n"
 "currentdict end definefont pop \n"
 "end \n"
-"%%EndProlog \n"
+"%%EndProlog \n";
+
+string preamble = ""
 "%% \n"
 "%%Page: 1 \n"
 "mydict begin \n"
@@ -178,6 +178,7 @@ int main(int argc, char** argv) {
     double      scale;
     string      topo_name;
     bool        verbose = false;
+    bool        read_topology = false;
     char        c;
 
     // Getopt based argument handling.
@@ -216,13 +217,14 @@ int main(int argc, char** argv) {
     
     config      *current_state = new config(std::cin);
         
-    if( topo_name.length() > 0 ){			// Why does topology depend on force field???!!!
-        a_topology = new topology(topo_name.c_str());   // Need to implement
+    if( topo_name.length() > 0 ){
+        a_topology = new topology(topo_name.c_str());
+        read_topology = true;
     } else {
         a_topology = new topology(1.0);		// Default topology 1 unit circle
     }
 
-    current_state->add_topology(a_topology);         // Assocuate topology with the configuration.
+    current_state->add_topology(a_topology);    // Assocuate topology with the configuration.
     if( verbose ){
         std::cerr << "Set up topology:";
         a_topology->write( stderr );
@@ -233,12 +235,10 @@ int main(int argc, char** argv) {
     scale = 8.0/max(current_state->x_size,current_state->y_size);
 
     // Write in it
+    std::cout << prolog;
     std::cout << preamble;
-    std::cout << scale;
-    std::cout << " dup scale \n";
-    std::cout << 0.5/scale;
-    std::cout << " UL\n";
-    current_state->ps_atoms( std::cout );
+    std::cout << scale << " dup scale " << 0.5/scale << " UL\n";
+    current_state->ps_atoms( std::cout );	// Ideally should be aware of verbose and read_topology
     std::cout << ending;
 
     delete current_state;

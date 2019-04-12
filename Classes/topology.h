@@ -42,9 +42,9 @@ public:
     atom    *atoms(int type, int i);     ///< Function to read data
     int     n_top;                       ///< how many topologies
 */
-    int     write(const char *filename); ///< Write the topology to a named file.
+    int     write(const char *filename); ///< Write the topology to a named file. (Absent)
     int     write(FILE *dest);  	 ///< Write the topology to a file.
-    int     write(std::ofstream dest );	 ///< Write the topology to c++ ofstream.
+    int     write(std::ostream& dest ); ///< Write the topology to c++ ofstream.
 
     size_t  n_atom_types;                ///< Total number of different atom types.
     vector<std::string>    atom_names;   ///< Labels for the different types of atoms.

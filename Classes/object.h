@@ -29,7 +29,7 @@ public:
                  double y_size,
                  bool periodic);            ///< Move the object a random amount controlled by max_dist.
     void    rotate(double max_angle );      ///< Rotate the object a random amount controlled by max_angle.
-    int     write(std::ofstream& _out);     ///< Write the object to a file
+    int     write(std::ostream& _out);      ///< Write the object to a file
     int     write(FILE *dest);              ///< Write the object to a file
     double  distance(object *obj2, double x_size,
                      double y_size,

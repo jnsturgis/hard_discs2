@@ -1,11 +1,11 @@
 
-all:	documentation binaries
+all:	binaries documentation
 
 documentation:
-	cd doxygen && doxygen doxyfile
-	touch documentation
+	cd doxygen && doxygen doxyfile;
+	cd doxygen/latex && $(MAKE) $(MFLAGS);
 
-binaries:
+binaries: 
 	cd Classes && $(MAKE) $(MFLAGS);
 	cd NVT && $(MAKE) $(MFLAGS);
 	cd makeconfig && $(MAKE) $(MFLAGS);
@@ -17,5 +17,5 @@ clean:
 	cd config2eps && $(MAKE) clean ;
 	cd Classes && $(MAKE) clean ;
 	cd doxygen && rm -rf html doxygen.log
-	rm -f documentation
+
 

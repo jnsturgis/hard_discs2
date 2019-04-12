@@ -117,7 +117,10 @@ void    object::rotate(double max_angle){
  * @param x_size    The width of the box
  * @param y_size    The height of the box
  * @param periodic  Flag for if there are periodic boundary conditions or not
+ *
  * @return          The distance to object 2.
+ *
+ * @todo            Not really useful for molecules...
  */
 double  object::distance(object* obj2, double x_size, double y_size, bool periodic){
     double dx, dy, dx2, dy2;
@@ -144,23 +147,24 @@ double  object::distance(object* obj2, double x_size, double y_size, bool period
 }
 
 /**
- * @brief   Write an object to a file object.
- * @param dest  The file to write to (opened for writing).
- * @return      The return value of the print statement.
+ * @brief       Write an object to a file object.
+ *
+ * @param dest  The output stream to write to.
+ * @return      Always returns true.
  */
-int object::write(std::ofstream& _out){
-    assert(_out);
-    _out << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
-    return 1;
+int 
+object::write(std::ostream& dest){
+    dest << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
+    return (int)true;
 }
 
 /**
  * @brief   Write an object to a file pointer.
+ *
  * @param dest  The file to write to (opened for writing).
  * @return      The return value of the print statement.
  */
 int object::write(FILE *dest){
-    assert(dest);
     return( fprintf(dest,"%5d %9f2 %9f2 %9f2\n",
                  o_type, pos_x, pos_y, orientation ));
 }
