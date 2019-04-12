@@ -1,0 +1,16 @@
+4
+GpA    1
+ErbB2  2
+LH2    0.5
+CC     0.5
+2
+Disk
+1
+0 0.0 0.0 red
+Square
+4
+2 -0.5 -0.5 green
+2 -0.5  0.5 blue
+3  0.5  0.5 orange
+3  0.5 -0.5 red
+

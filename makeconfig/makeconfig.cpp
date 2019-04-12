@@ -1,124 +1,181 @@
 /**
- * \file    makeconfig.cpp
- * \author  James Sturgis
- * \brief   Main function for makeconfig application
- * \date    17 April 2018
- * \version 1.0
+ * @file    makeconfig.cpp
+ * @author  James Sturgis
+ * @brief   Main function for makeconfig application
+ * @date    17 April 2018
+ * @version 1.0
  *
  * This file contains the main routine for the make_config program that is part of
  * the Very Coarse Grained disc simulation programmes.
  *
- * The function of this program is to produce a configuration of the desired
- * proteins in the composition requested in a relatively random organization.
- *
- * The algorithm will create an empty configuration with the desired geometry
- * and then try to randomly place the objects into the space. The first two
- * parameters give the size of the configuration and then the following parameters
- * are the number of object of the different types, O, 1, ...
- *
- * \todo    Make sure that the configuration has non-infinate energy and if
- *          it does, take steps to find one that does not.
+ * See makeconfig.md for details of usage and file formats.
  */
 
-#include "../NVT/config.h"
-#include "../NVT/object.h"
-#include "../NVT/common.h"
-#include <stdio.h>
-#include <math.h>
+#include "../Classes/config.h"
+// #include <stdio.h>
+// #include <math.h>
 #include <iostream>
-#include <boost/program_options.hpp>
+#include <unistd.h>
 
 using namespace std;
 
+#define MAX_TESTS	1000
 
-int main(int argc, char **argv)
+string placement_failure  = ""
+"Fatal Error: Unable to place objects without "
+"collisions! You could try changing the number of "
+"attempts using the -a option, or try placing them "
+"initially in a crystaline array with 'makecrystal', or "
+"try initially placing them in a larger area and then "
+"resizing the configuration with 'shrinkconfig'.";
+
+void usage()
 {
-    int     n, xsize, ysize;
-    std::vector<int> topology_types;
-    double  pos_x, pos_y, orient;
-    config  *a_config = new config();
-    string  out_name;
+    std::cerr << "Usage: makeconfig [-v][-p][-t topo_file][-o out_file][-f force_file]"
+        "[-d scale][-a attempts] \n\t x_size y_size n_obj0 ... \n";
+}
 
-    namespace po = boost::program_options;
-    po::options_description desc("Generic options");
-    desc.add_options()
-        ("help", "Produce help message")
-        ("xsize,x", po::value<int>(&xsize)->required(), "Size in the x direction")
-        ("ysize,y", po::value<int>(&ysize)->required(), "Size in the y direction")
-        ("topology,t", po::value< std::vector<int> >(&topology_types)->multitoken()->required(), "Number of topology 1, 2, 3, etc., objects")
-        ("output,o", po::value<string>(&out_name)->required(), "Output configuration name")
-    ;
+int 
+main(int argc, char **argv)
+{
+    int     	n, c;
+    float   	x_size, y_size;
+    double  	pos_x, pos_y, orient;
+    char  	*out_name, *topo_name, *force_name;
+    bool        verbose = false;
+    bool        clash = true;
+    int		max_try = MAX_TESTS;
+    object      *my_object;
 
-    // Store arguments
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    
-    // Print the help if needed
-    if (vm.count("help") || argc == 1) {
-        cout << desc << "\n";
-        return 1;        
-    }
-    
-    po::notify(vm);
+    config      *a_config = new config();
+    force_field	*the_force;
+    topology	*a_topology;
+    a_config->is_periodic = false;
 
-    a_config->x_size = xsize;
-    a_config->y_size = ysize;
-    
-    // Handle each topology type separately
-    for( unsigned i = 0; i<topology_types.size(); i++) {
-        n = topology_types[i];
-        for(int j = 0; j < n; j++ ){
-            pos_x  = rnd_lin(a_config->x_size);
-            pos_y  = rnd_lin(a_config->y_size);
-            orient = rnd_lin(M_2PI);
-            a_config->add_object( new object( i, pos_x, pos_y, orient ));
+    float   scale = 1.0;
+    out_name = force_name = topo_name = NULL;
+
+    // Getopt based argument handling.
+
+    while( ( c = getopt (argc, argv, "vpd:f:t:o:a:") ) != -1 )
+    {
+        switch(c)
+        {
+            case 'v': verbose = true; break;
+            case 'p': a_config->is_periodic = true; break;
+            case 'd':				// Handle optional arguments
+                if (optarg) scale = std::atof(optarg);
+                break;
+            case 'a':				// Handle optional arguments
+                if (optarg) max_try = std::atof(optarg);
+                break;
+            case 'f':
+                if (optarg) force_name = optarg;
+                break;
+            case 't':
+                if (optarg) topo_name = optarg;
+                break;
+            case 'o':
+                if (optarg) out_name = optarg;
+                break;
+            case 'h':
+                usage();
+                return 0;
+            case '?':				// Something wrong.
+                if (optopt == 'd' or optopt == 'f' or optopt =='t' or 
+                    optopt == 'o' or optopt == 'a' ){
+                    std::cerr << "The -" << optopt << " option is missing a parameter!\n";
+                } else {
+                    std::cerr << "Unknown option " << optopt << "!\n";
+                }
+            default :                           // Something very wrong.
+                usage();
+                exit(EXIT_FAILURE);
         }
     }
-    //~ if ( vm.count("type0") || vm.count("type1") ) {
-        //~ if (vm.count("type0")) {
-            //~ n = type0;
-            //~ for(int i = 0; i < n; i++ ){
-                //~ pos_x  = rnd_lin(a_config->x_size);
-                //~ pos_y  = rnd_lin(a_config->y_size);
-                //~ orient = rnd_lin(M_2PI);
-                //~ a_config->add_object( new object( 0, pos_x, pos_y, orient ));
-            //~ }
-        //~ }
-        //~ if (vm.count("type1")) {
-            //~ n = type1;
-            //~ for(int i = 0; i < n; i++ ){
-                //~ pos_x  = rnd_lin(a_config->x_size);
-                //~ pos_y  = rnd_lin(a_config->y_size);
-                //~ orient = rnd_lin(M_2PI);
-                //~ a_config->add_object( new object( 1, pos_x, pos_y, orient ));
-            //~ }
-        //~ }
-        //~ if (vm.count("type2")) {
-            //~ n = type1;
-            //~ for(int i = 0; i < n; i++ ){
-                //~ pos_x  = rnd_lin(a_config->x_size);
-                //~ pos_y  = rnd_lin(a_config->y_size);
-                //~ orient = rnd_lin(M_2PI);
-                //~ a_config->add_object( new object( 2, pos_x, pos_y, orient ));
-            //~ }
-        //~ }
-    //~ }
-    //~ else {
-        //~ cout << "Missing at least a bead number\n";
-    //~ }
+    if( verbose ){                              // Report on situation
+        std::cerr << "Verbose flag set\n";
+    }
 
-    // Open a stream to write the output
-    ofstream _out(out_name.c_str());
-    
-    // Check if we could open it
-    if(!_out) {
-        cout << "Cannot open file " << out_name << ", exiting ...\n";
+    if(( argc - optind ) < 3 ){			// Check enough parameters
+        std::cerr << "Not enough parameters!\n";
+        usage();
         return 1;
     }
-    
-    // Write
-    a_config->write(_out);
-    delete a_config;
 
-    return 0;
+    x_size = std::atof( argv[ optind++ ] );	// Find size for configuration
+    y_size = std::atof( argv[ optind++ ] );
+
+    if((x_size * y_size) <= 0.0 ){
+        std::cerr << "Negative or zero surface area!\n";
+	usage();
+        return 1;
+    }
+    // Setup topology and forcefield for insertions.
+    if( force_name != NULL ){
+        the_force  = new force_field(force_name); // Need to implement
+    } else {
+        the_force  = new force_field(1.0);	// Default force field 1 atom hard disk
+    }
+
+    if( topo_name != NULL){			// Why does topology depend on force field???!!!
+        a_topology = new topology(topo_name);   // Need to implement
+    } else {
+        a_topology = new topology(1.0);		// Default topology 1 unit circle
+    }
+
+    a_config->add_topology(a_topology);         // Assocuate topology with the configuration.
+    if( verbose ){
+        std::cerr << "Set up topology:";
+        a_topology->write( stderr );
+        std::cerr << "================";
+    }
+
+    // Start adding things to the empty configuration
+    x_size /= scale;				// Rescale space if requested.
+    y_size /= scale;
+
+    a_config->x_size = x_size;
+    a_config->y_size = y_size;
+    
+    for( int i = 0; i < (argc - optind); i++) {
+        n = std::atof( argv[ optind+i ] );
+        for(int j = 0; j < n; j++ ){            // Try to place 'n' new objects of type i
+            clash = true;
+            for( int k = 0; ((k < max_try) && clash ); k++ ){
+                pos_x  = rnd_lin(a_config->x_size);
+                pos_y  = rnd_lin(a_config->y_size);
+                orient = rnd_lin(M_2PI);
+                my_object = new object( i, pos_x, pos_y, orient );
+                clash = a_config->test_clash( my_object );
+                if( clash ) delete my_object;
+            }
+            if( !clash ){
+                a_config->add_object( my_object );
+            } else {
+		std::cerr << placement_failure;
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    a_config->expand( scale );			// Rescale configuration after placement.
+
+    FILE *dest = stdout;
+    if(out_name != NULL){			// Open output stream if necessary
+        dest = fopen(out_name, "w" );
+	if( dest == NULL ){
+	    std::cerr << "Unable to open" << out_name << "for writing, using stdout!\n";
+            dest = stdout;
+        }
+    }    
+    assert( dest );
+
+    // Write the configuration
+    a_config->write(dest);
+
+    if( dest != stdout ) fclose( dest );
+    delete a_config;
+    return EXIT_SUCCESS;
 }
+

@@ -29,48 +29,116 @@ using boost::format;
  * maxima and the size could be obtained without counting, and there was less wasted
  * space. Plenty of room for improvement.
  */
-topology::topology() {
-    int i;
-    n_top = 0;
+topology::topology() {                          // An empty topology has no molecules or atoms.
+    n_atom_types = 0;
+    n_molecules  = 0;
+    check();
+}
 
-    for(i=0; i<MAX_TOPO; i++){
-        data[i]=(atom **)NULL;
-        len[i] = 0;     // JS 16/4
+topology::topology(topology* orig){		// Stub should copy
+    assert(false);                  		// Stub not ready to be used
+}
+
+topology::topology(const char *filename) {      // Read the topology from a named file.
+    FILE *source;
+    if(( source = fopen( filename, "r" )) != NULL ){
+        read_topology( source );
+        fclose( source );
+    } else {
+        throw std::runtime_error("Error opening file");
     }
-    
-    // We don't create the atoms here
 }
 
-topology::topology(topology* orig){
-    topology();                             // Cheat
-    assert(true);                           // Why ?
+topology::topology(FILE *source) {              // Read the topology from an open file.
+    read_topology( source );
 }
 
-topology::topology(const topology& orig) {
-    assert(false);                  // Stub not ready to be used
+topology::topology(float size) {
+    atom *an_atom = new atom(0, 0.0, 0.0, "red" );
+
+    n_atom_types = 1;
+    atom_names.resize( n_atom_types );
+    atom_sizes.resize( n_atom_types );
+    atom_names(0) = "Simple";
+    atom_sizes(0) = size;
+    n_molecules  = 1;
+    molecules.resize( n_molecules );
+    molecules[0].rename( "Hard disk" );
+    molecules[0].add_atom( an_atom );
 }
 
 topology::~topology() {
-    for(int i = 0; i < MAX_TOPO; i++ ){
-        if(data[i]!=(atom **)NULL){
-            for(int j = 0; j< MAX_ATOMS; j++)
-                if(data[i][j] != (atom *)NULL)
-                    delete data[i][j];
-            free(data[i]);
-        }
-    }
+    molecules.resize(0);			// Destroy the molecules
+    n_molecules = 0;
+    atom_sizes.resize(0);
+    atom_names.resize(0);			// Destroy the atom names
+    n_atom_types = 0;
 }
 
+bool topology::check() {			// Should also check all molecules and names!
+    return(
+        ( n_molecules == molecules.size() ) &&
+        ( n_atom_types == atom_names.size() ) &&
+        ( n_atom_types == atom_sizes.size() ) );
+}
+
+void
+topology::read_topology(FILE *source) {	/// @todo Error handling and comments
+    size_t	i;
+    char	name[64];
+
+    fscanf( source, "%lu\n", &n_atom_types );
+    atom_names.resize(n_atom_types);
+    atom_sizes.resize(n_atom_types);
+    for( i = 0; i < n_atom_types; i++ ){
+        fscanf( source, "%s %lf\n", name, &(atom_sizes(i)) );
+	atom_names(i).assign(name);
+    }
+    fscanf( source, "%lu\n", &n_molecules );
+    molecules.resize(n_molecules);
+    for( i = 0; i < n_molecules; i++ )
+        molecules(i).read( source );
+}
+
+int
+topology::write(FILE *dest){
+    int	        i;
+
+    fprintf( dest, "%lu\n", n_atom_types );
+    for( i = 0; i < n_atom_types; i++ ){
+        fprintf( dest, "%s %lf\n", atom_names(i).c_str(), atom_sizes(i) );
+    }
+    fprintf( dest, "%lu\n", n_molecules );
+    for( i = 0; i < n_molecules; i++ )
+        molecules(i).write( dest );
+    return true;
+}
+
+int
+topology::write(ostream& dest){
+    int	        i;
+
+    dest << boost::format("%lu\n") % n_atom_types;
+    for( i = 0; i < n_atom_types; i++ ){
+        dest << boost::format("%s %lf\n") % atom_names(i).c_str() % atom_sizes(i);
+    }
+    dest << boost::format("%lu\n") % n_molecules;
+    for( i = 0; i < n_molecules; i++ )
+        molecules(i).write( dest );
+    return true;
+}
+
+/*
 void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::string topology_file) {
     
-    /* Read the atom types from the topology file
+     * Read the atom types from the topology file
      * Then create atoms at the right spot for each pre-defined topology
      * Currently only 3 types - single, square and triangle 
      * Basically, read one line (single, square or triangle)
-     * And add the corresponding atoms in the next line */
+     * And add the corresponding atoms in the next line 
     
     // Declare what will handle our lines
-    istringstream iss;
+    istringstream      iss;
     std::string        line;
     std::string        temp_str;
     // And an int to count the number of topologies
@@ -102,7 +170,7 @@ void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::
                 if( (iss >> a1) ) {
                     data[data_count] = (atom **)malloc(MAX_ATOMS*sizeof(atom*));
                     for(int j = 0; j < MAX_ATOMS; j++) data[data_count][j] = (atom *)NULL;
-                    data[data_count][0] = new atom(a1, 0.0, 0.0);  // Memory losses here
+                    data[data_count][0] = new atom(a1, 0.0, 0.0, "red");  // Memory losses here
                     len[data_count]=1;           
                     
                     data_count ++;
@@ -124,10 +192,10 @@ void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::
                         
                     // We have the radius, we want to put the atoms at the right places, so ... 
                     // It's at the points (x, y) (radius, radius)                  
-                    data[data_count][0] = new atom(a1, radius(a1), radius(a1));
-                    data[data_count][1] = new atom(a2, radius(a2),-radius(a2));
-                    data[data_count][2] = new atom(a3,-radius(a3), radius(a3));
-                    data[data_count][3] = new atom(a4,-radius(a4),-radius(a4));
+                    data[data_count][0] = new atom(a1, radius(a1), radius(a1), "red");
+                    data[data_count][1] = new atom(a2, radius(a2),-radius(a2), "blue");
+                    data[data_count][2] = new atom(a3,-radius(a3), radius(a3), "green");
+                    data[data_count][3] = new atom(a4,-radius(a4),-radius(a4), "orange");
                     len[data_count]= 4;       
 
                     data_count ++;
@@ -148,14 +216,14 @@ void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::
                     for(int j = 0; j < MAX_ATOMS; j++) data[data_count][j] = (atom *)NULL;
                     
                     // A triangle, should get the right coordinates as this is not a triangle
-                    /* For an equilateral triangle with the point 0,0 at its center of geometry
+                     * For an equilateral triangle with the point 0,0 at its center of geometry
                      * And the upper point at 0, 1
                      * The y of the two other points is 0.5
                      * The x (or -x) is sin(30)*1 
-                     * Of course multiply all these by the radius */
-                    data[data_count][0] = new atom(a1,                  0, radius(a1));
-                    data[data_count][1] = new atom(a2, sin(30)*radius(a2),-0.5*radius(a2));
-                    data[data_count][2] = new atom(a3,-sin(30)*radius(a3),-0.5*radius(a3));
+                     * Of course multiply all these by the radius *
+                    data[data_count][0] = new atom(a1,                  0, radius(a1), "red");
+                    data[data_count][1] = new atom(a2, sin(30)*radius(a2),-0.5*radius(a2), "blue");
+                    data[data_count][2] = new atom(a3,-sin(30)*radius(a3),-0.5*radius(a3), "green");
                     len[data_count]= 3;       
 
                     data_count ++;
@@ -168,12 +236,12 @@ void topology::fill_topology(boost::numeric::ublas::vector<double> radius, std::
     }
     ff.close();
 }
-
+*/
 /**
  * How many atoms are there in objects of the given type?
  * @param type  The type of object concerned.
  * @return      The number.
- */
+ *
 int     topology::n_atom(int type){
     return len[type];       // JS 16/4
 //    int     i;
@@ -183,18 +251,18 @@ int     topology::n_atom(int type){
 //}
 //return i;
 }
-
+*/
 /**
  *
  * @param type
  * @param i
  * @return
- */
 atom*   topology::atoms(int type, int i) {
     assert(data[type] != (atom **)NULL );
     return data[type][i];
 }
-
+*/
+/*
 int     topology::write(std::ofstream& _log){
     int     i;
     for(i = 0; i < MAX_TOPO; i++){
@@ -216,3 +284,4 @@ int     topology::write(std::ofstream& _log){
     _log << "\n";
     return 1;
 }
+*/

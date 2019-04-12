@@ -34,7 +34,7 @@ The various programmes in the suite and their usage (User manual).
 The different files and their formats. (Users manual).
 
 Slowly getting there with markdown files carcass is there 'just' need
-to flesh it out.
+to flesh it out...
 
 ====================================================
 
@@ -48,6 +48,10 @@ POSIX recommendations...
 2> required ordered parameters x_size y_size n_type1...
 
 implementing this SHOULD only modify makeconfig.cpp is the problem with the use of boost libraries.
+
+Branch: Fix_makeconfig
+Try to include old style usage,
+With optional parameters for forcefield and topology load from file or defaults.
 
 ====================================================
 

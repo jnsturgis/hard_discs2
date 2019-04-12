@@ -117,7 +117,10 @@ void    object::rotate(double max_angle){
  * @param x_size    The width of the box
  * @param y_size    The height of the box
  * @param periodic  Flag for if there are periodic boundary conditions or not
+ *
  * @return          The distance to object 2.
+ *
+ * @todo            Not really useful for molecules...
  */
 double  object::distance(object* obj2, double x_size, double y_size, bool periodic){
     double dx, dy, dx2, dy2;
@@ -144,16 +147,26 @@ double  object::distance(object* obj2, double x_size, double y_size, bool period
 }
 
 /**
- * @brief   Write an object to a file object.
+ * @brief       Write an object to a file object.
+ *
+ * @param dest  The output stream to write to.
+ * @return      Always returns true.
+ */
+int 
+object::write(std::ostream& dest){
+    dest << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
+    return (int)true;
+}
+
+/**
+ * @brief   Write an object to a file pointer.
+ *
  * @param dest  The file to write to (opened for writing).
  * @return      The return value of the print statement.
  */
-int object::write(std::ofstream& _out){
-    assert(_out);
-    _out << format("%5d %9f2 %9f2 %9f2\n") % o_type % pos_x % pos_y % orientation;
-    return 1;
-    //~ return( fprintf(dest,"%5d %9f2 %9f2 %9f2\n",
-            //~ o_type, pos_x, pos_y, orientation ));
+int object::write(FILE *dest){
+    return( fprintf(dest,"%5d %9f2 %9f2 %9f2\n",
+                 o_type, pos_x, pos_y, orientation ));
 }
 
 /**
@@ -197,8 +210,8 @@ double  object::interaction(force_field* the_force,
     double  oo2, ox2, oy2;
     double  ax2, ay2;
 
-    n1 = the_topologies->n_atom(o_type);
-    n2 = the_topologies->n_atom(obj2->o_type);
+    n1 = the_topologies->molecules(o_type).n_atoms;
+    n2 = the_topologies->molecules(obj2->o_type).n_atoms;
     
     t2  = obj2->o_type;
     oo2 = obj2->orientation;
@@ -206,11 +219,11 @@ double  object::interaction(force_field* the_force,
     oy2 = obj2->pos_y;
 
     for(i = 0; i < n1; i++){
-        at1 = the_topologies->atoms(o_type, i);
+        at1 = &(the_topologies->molecules(o_type).the_atoms(i));
         x1 = pos_x - sin(orientation)*at1->y_pos + cos(orientation)*at1->x_pos;
         y1 = pos_y + cos(orientation)*at1->y_pos + sin(orientation)*at1->x_pos;
         for(j = 0; j < n2; j++){ // This segment is the slowest...
-            at2 = the_topologies->atoms(t2,j);
+            at2 = &(the_topologies->molecules(t2).the_atoms(j));
             ax2 = at2->x_pos;
             ay2 = at2->y_pos;
             x2 = ox2 - sin(oo2) * ay2 + cos(oo2)*ax2;
@@ -248,9 +261,9 @@ double  object::box_energy(
     atom    *at1;
     double  value = 0.0;
 
-    n1 = the_topology->n_atom(o_type);
+    n1 = the_topology->molecules(o_type).n_atoms;
     for(i=0;i<n1;i++){
-        at1 = the_topology->atoms(o_type, i);
+        at1 = &(the_topology->molecules(o_type).the_atoms(i));
         x1 = pos_x - sin(orientation)*at1->y_pos + cos(orientation)*at1->x_pos;
         y1 = pos_y + cos(orientation)*at1->y_pos + sin(orientation)*at1->x_pos;
         r  = the_force->size(at1->type);
