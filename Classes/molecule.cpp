@@ -63,7 +63,7 @@ molecule::read(FILE *source){
     char    name[64];
 
     assert( n_atoms == 0 );
-    fscanf( source, "%s\n", &name );
+    fscanf( source, "%s\n", (char *)(&name) );
     mol_name.assign(name);
     fscanf( source, "%d\n", &n_atoms );
     assert( n_atoms > 0 );

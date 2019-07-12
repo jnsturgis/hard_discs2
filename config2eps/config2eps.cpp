@@ -190,7 +190,10 @@ int main(int argc, char** argv) {
             case 'v': verbose = true;
                 break;
             case 't':
-                if (optarg) topo_name.assign(optarg);
+                if (optarg){
+                    topo_name.assign(optarg);
+                    read_topology = true;
+                }
                 break;
             case '?':				// Something wrong.
                 if (optopt == 't' ){
@@ -216,10 +219,9 @@ int main(int argc, char** argv) {
     // Get the configuration
     
     config      *current_state = new config(std::cin);
-        
-    if( topo_name.length() > 0 ){
+    
+    if( read_topology ){
         a_topology = new topology(topo_name.c_str());
-        read_topology = true;
     } else {
         a_topology = new topology(1.0);		// Default topology 1 unit circle
     }

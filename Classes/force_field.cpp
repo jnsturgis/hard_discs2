@@ -135,7 +135,7 @@ force_field::read_force_field( FILE *source ){
                     logical_line++;
                     break;
             case 2: for( i = 0; i < type_max; i++ ){
-                        sscanf( line, "%s", &data );
+                        sscanf( line, "%s", (char *)(&data) );
                         color(i) = data;
                     }
                     logical_line++;

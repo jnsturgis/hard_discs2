@@ -5,14 +5,34 @@ The suite of programmes desribed here are designed to provide a simple system
 for investigating very coarse grained models of membrane proteins. The programmes
 operate with several different types of file that describe the system being modelled.
 
-# Programmes and utilities
+Included are programmes for designing and creating a system (called a configuration), 
+manipulating a system (for example expanding or compressing it), 
+analysing a system or displaying it, 
+and doing different forms of integraton.
+
+## The programmes and utilities
 
 The programmes:
-* [NVT](@ref NVT) - perform a NVT monte-carlo simulation
-* [makeconfig](@ref makeconfig) - create a new configuration file
-* [config2eps](@ref config2eps) - create a postscript file from a configuration file
+* [NVT](@ref NVT) - perform a NVT monte-carlo integration in the NVT ensemble.
+* [makeconfig](@ref makeconfig) - create a new configuration file.
+* [config2eps](@ref config2eps) - create a postscript file from a configuration file.
+Planned programmes (versions exist need to be added and updated):
+* [pcf](@ref pcf) - calculate pair correlation functions from a configuration.
+* [Gibbs](@ref Gibbs) - perform a monte-carlo integration in the Gibbs ensemble.
+* [shrinkconfig](@ref shrinkconfig) - change the size of a configuration (with agitation if necessary).
+* [local_order](@ref local_order) - analyse the local environment of the objects
+<!--
+Others that exist and might be fun...
+* [delaunay] - do a delaunay tesselation and calculate a voronoi diagramme
+* [diffusion] - calculate diffusion information from time series
+* [diff_tracer] - do a tracer diffusion calculation
+* [crystallite] - identify crystalline regions in a configuration
+* [diff_config] - calclate difference between 2 configurations. 
+* [NPT]
+* [g6r]
+-->
 
-# Files and file formats
+## Files and file formats
 
 The programmes have in common that they all operate on configurations.
 A configuration can be thought of as a series of objects organized on 
@@ -25,20 +45,20 @@ is described [here](@ref config_file).
 
 The various objects referenced in the configuration are made up of one
 or more beads (or atoms). Atoms have various properties, such as size 
-and color and determine how the various objects interact.
+and color and objects interact through their atoms.
 The organization of the various atoms to make up objects is described by a 
 topology file that is described in detail [here](@ref topology_file).
 
 The interactions between the different atoms is defined by a force field.
 This data structure defines the properties of the different atom types, and
-teir pairwise interactions. The force field is saved in a file that is
+their pairwise interactions. The force field is saved in a file that is
 described [here](@ref force_field_file).
 
-# Compilation, installation and testing
+## Compilation, installation and testing
 
-* Need the BOOST library
+* Currently the implementation needs parts of the BOOST library
 * Running 'make' in the root directory should compile everything including 
   the documentation.
 
-# Tutorial
+## Tutorial
 

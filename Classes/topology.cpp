@@ -102,7 +102,7 @@ topology::read_topology(FILE *source) {	/// @todo Error handling and comments
 
 int
 topology::write(FILE *dest){
-    int	        i;
+    size_t	        i;
 
     fprintf( dest, "%lu\n", n_atom_types );
     for( i = 0; i < n_atom_types; i++ ){
@@ -116,7 +116,7 @@ topology::write(FILE *dest){
 
 int
 topology::write(ostream& dest){
-    int	        i;
+    size_t	        i;
 
     dest << boost::format("%lu\n") % n_atom_types;
     for( i = 0; i < n_atom_types; i++ ){

@@ -301,6 +301,21 @@ int config::n_objects(){
 }
 
 /**
+ * This function tests if there are any clashes the configuration using the
+ * topology file.
+ *
+ * @return true if there is a clash otherwise false.
+ *
+ * @todo Write code.
+ */
+bool
+config::test_clash(){
+    int	i;
+    for(i=0;i<obj_list.size();i++);
+    return false;
+}
+
+/**
  * This function tests if the new_object can be inserted into the configuration
  * without generating a clash (as determined by the topology file).
  *
@@ -444,9 +459,9 @@ double config::rms(const config& ref){
  *
  * @param dl    The multiplicative factor to apply to the size and the object
  *              coordinates.
- * @return      No return value.
+ * @return      Return if there are clashes.
  */
-void config::expand(double dl){
+bool config::expand(double dl){
     int     i;
 
     x_size *= dl;                           // Expand boundary
@@ -456,6 +471,34 @@ void config::expand(double dl){
         obj_list.get(i)->recalculate = true;// Also for the objects
         obj_list.get(i)->expand(dl);        // Move objects in rescaled box
     }
+    return this->test_clash();
+}
+
+/**
+ * This function changes the size of a configuration by an isometric expansion
+ * moving all the objects apart. It does not change the orientations of the
+ * various objects.
+ *
+ * @param dl    The multiplicative factor to apply to the size and the object
+ *              coordinates.
+ * @param max_try Number of attempted object displacements to remove clashes.
+ * @return      Return if there are clashes.
+ * @todo        Jiggle and jolt (move and twist to remove clashes) steepest descent
+ */
+bool config::expand(double dl, int max_try ){
+    int     i;
+
+    x_size *= dl;                           // Expand boundary
+    y_size *= dl;
+    unchanged = false;                      // The energies will be different
+    for(i=0;i<obj_list.size();i++){
+        obj_list.get(i)->recalculate = true;// Also for the objects
+        obj_list.get(i)->expand(dl);        // Move objects in rescaled box
+    }
+    for(i=0;i<max_try;i++){
+      if(this->test_clash()) /* jiggle and jolt */;
+    }
+    return this->test_clash();
 }
 
 /**

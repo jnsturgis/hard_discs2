@@ -107,7 +107,8 @@ public:
     int     object_types();         ///< The number of different object types.
     int     n_objects();            ///< The number of objects in configuration.
 
-    void    expand( double dl );    ///< Expand the surface area by a factor dl.
+    bool    expand( double dl );    ///< Expand the surface area by a factor dl.
+    bool    expand( double dl, int max_try );    ///< Expand the surface area by a factor dl allow several attempts to remove clashes.
     void    move(int obj_number, double dl_max 
                                 );  ///< Move an object in the configuration.
     void    rotate(int obj_number, double theta_max
@@ -116,6 +117,7 @@ public:
                                  ); ///< Mark energies for recalculation.
     bool    test_clash( object *new_object 
                                  ); ///< Check if there is a clash to insert new object.
+    bool    test_clash();           ///< Check if there is a clash between objects.
     double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
 
     /* Variables should be more private - the copy function is the main problem */
