@@ -35,7 +35,7 @@ topology::topology() {                          // An empty topology has no mole
     check();
 }
 
-topology::topology(topology* orig){		// Stub should copy
+topology::topology(topology* orig){		// @todo Stub should copy
     assert(false);                  		// Stub not ready to be used
 }
 

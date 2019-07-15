@@ -28,20 +28,20 @@ void usage()
 int 
 main(int argc, char **argv)
 {
-    int     	c, max_try;
-    char  	*out_name, *topo_name;
-    bool        verbose = false;
-    int		status = EXIT_SUCCESS;
+    int     	c;
 
     config      *a_config;
     topology	*a_topology;
  
-    double   scale = 1.0;
+    double      scale = 1.0;                    // Set default values
+    char        *out_name, *topo_name;
     out_name = topo_name = NULL;
+    bool        verbose = false;
+    int         max_try = 1.0;
 
     // Getopt based argument handling.
 
-    while( ( c = getopt (argc, argv, "vs:t:o:a:") ) != -1 )
+    while( ( c = getopt (argc, argv, "hvs:t:o:a:") ) != -1 )
     {
         switch(c)
         {

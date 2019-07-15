@@ -16,7 +16,7 @@ clean:
 	cd NVT && $(MAKE) clean ;
 	cd makeconfig && $(MAKE) clean ;
 	cd config2eps && $(MAKE) clean ;
-	cd shrinkconfig && $(MAKE) clean;l
+	cd shrinkconfig && $(MAKE) clean;
 	cd Classes && $(MAKE) clean ;
 	cd doxygen && rm -rf html doxygen.log
 

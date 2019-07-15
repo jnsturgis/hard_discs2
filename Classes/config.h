@@ -117,7 +117,7 @@ public:
                                  ); ///< Mark energies for recalculation.
     bool    test_clash( object *new_object 
                                  ); ///< Check if there is a clash to insert new object.
-    bool    test_clash();           ///< Check if there is a clash between objects.
+    bool    test_clash();           ///< Check if there are any clashes between objects.
     double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
 
     /* Variables should be more private - the copy function is the main problem */
@@ -127,6 +127,11 @@ public:
     bool        is_periodic;        ///< Use periodic boundary conditions
 
 private:
+    bool        test_clash( object *o1, object *o2); ///< Check if there is a clash between 2 objects.
+    bool        has_clash( int i ); ///< check if the object with index i has a clash. 
+    void        jiggle();           ///< Shake objects a bit to try and remove bad contacts.
+    void        jiggle(object *o1); ///< Shake the object a bit to try and remove bad contacts.
+
     void	config_read(std::istream& src
                                  ); ///< Helper function reading from a stream.
 

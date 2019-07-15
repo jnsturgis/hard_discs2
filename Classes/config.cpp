@@ -48,6 +48,7 @@ config::config() {
  *              way. If there is an error this should be apparent even if the
  *              structure is still valid.
  * @todo        Read from file if periodic conditions or not.
+ * @todo        Enrich file to handle non-rectangular areas.
  * @todo        Integrate an object constructor from a file saves 4 variables
  *              and a couple of lines of code.
  */
@@ -142,7 +143,7 @@ config::config(config& orig) {
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
     unchanged      = orig.unchanged;
-    the_topology   = orig.the_topology; // THIS CHEAT
+    the_topology   = new topology(orig.the_topology);
     is_periodic    = orig.is_periodic;
     obj_list.empty();
     for(int i = 0; i < orig.n_objects(); i++){
@@ -160,17 +161,13 @@ config::config(config& orig) {
 config::~config() {
     //~ if(the_topology) delete(the_topology);
 }
-/*
-int config::get_n_top(){
-    return the_topology->n_top;
-}
-*/
 
 /**
  * @return The area of the configuration.
  *
  */
 double config::area() { return x_size * y_size;}
+
 /**
  * This function calculates the energy of a configuration by comparing using
  * the force field interaction function to measure the energy between pairs of
@@ -250,6 +247,7 @@ double config::energy(force_field *&the_force) {
  *
  * @todo        Incorporate error handling and exit status return that is
  *              correct.
+ * @todo        More c++ style!
  */
 
 int config::write( FILE *dest ){
@@ -301,17 +299,78 @@ int config::n_objects(){
 }
 
 /**
+ * This function tests if there is a clash between the 2 objects obj1 and obj2
+ *
+ * @param obj1 a pointer to the first object.
+ * @param obj2 a pointer to the second object.
+ * @return true if there is a clash otherwise false.
+ */
+bool
+config::test_clash( object *obj1, object *obj2 ){
+
+    double  theta1 = obj1->orientation;
+    double  theta2 = obj2->orientation;
+    int     o_type1 = obj1->o_type;
+    int     o_type2 = obj2->o_type;
+
+    double  t1, t2, dx1, dx2, dy1, dy2, r1, r2, x1, x2, y1, y2;
+    double  dx, dy, r;
+
+    for(int j = 0; j < the_topology->molecules(o_type2).n_atoms; j++ ){
+                                        // Get atom information
+        t2  =  the_topology->molecules(o_type2).the_atoms(j).type;
+        dx2 =  the_topology->molecules(o_type2).the_atoms(j).x_pos;
+        dy2 =  the_topology->molecules(o_type2).the_atoms(j).y_pos;
+        r2  =  the_topology->atom_sizes(t2);      // Get radius
+                                        // Calculate atom position
+        x2  =  obj2->pos_x + dx2 * cos(theta2) - dy2 * sin(theta2);
+        y2  =  obj2->pos_y + dx2 * sin(theta2) + dy2 * cos(theta2);
+
+        for( int k = 0; k < the_topology->molecules(o_type1).n_atoms; k++ ){
+                                        // Get atom information
+            t1  =  the_topology->molecules(o_type1).the_atoms(j).type;
+            dx1 =  the_topology->molecules(o_type1).the_atoms(j).x_pos;
+            dy1 =  the_topology->molecules(o_type1).the_atoms(j).y_pos;
+            r1  =  the_topology->atom_sizes(t1);  // Get radius
+                                        // Calculate atom position
+            x1  =  obj1->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
+            y1  =  obj1->pos_y + dx1 * sin(theta1) + dy1 * cos(theta1);
+
+            dx = (x2-x1);
+            dy = (y2-y1);
+                                        // Handle periodic conditions
+            if( is_periodic ){          // Find closest image
+                if( dx > (x_size - r1 - r2 )) dx -= x_size;
+                if( dx < (r1 + r2 - x_size )) dx += x_size;
+                if( dy > (y_size - r1 - r2 )) dy -= y_size;
+                if( dy < (r1 + r2 - y_size )) dy += y_size;
+            }
+            r = dx*dx+dy*dy;
+            if( r < ((r1+r2)*(r1+r2))) return true;
+        }
+    }
+    return false;
+}
+
+/**
  * This function tests if there are any clashes the configuration using the
- * topology file.
+ * topology file but not the forcefield
  *
  * @return true if there is a clash otherwise false.
- *
- * @todo Write code.
  */
 bool
 config::test_clash(){
     int	i;
-    for(i=0;i<obj_list.size();i++);
+    object *obj1;
+    object *obj2;
+
+    for(i=0;i<obj_list.size();i++){
+        obj1 = obj_list.get(i);
+        for(int j=0; j<i; j++){
+            obj2 = obj_list.get(j);
+            if( test_clash( obj1, obj2 )) return true;
+        }
+    }
     return false;
 }
 
@@ -321,20 +380,13 @@ config::test_clash(){
  *
  * @param new_object a pointer to a valid object to test for insertion.
  * @return true if there is a clash otherwise false.
- *
- * @todo handle periodic conditions or wall collisions as appropriate.
  */
 bool
 config::test_clash( object *new_object ){
-    object *my_obj;
     int max_o_type = the_topology->n_atom_types - 1 ;
     int o_type1 = simple_min( new_object->o_type, max_o_type );
-    int o_type2;
     double theta1 = new_object->orientation;
-    double theta2;
     double t1, dx1, dy1, r1, x1, y1;
-    double t2, dx2, dy2, r2, x2, y2;
-    double r, dx, dy;
 
     if( !is_periodic ){                     // Check clash with walls.
         for(int i = 0; i < the_topology->molecules(o_type1).n_atoms; i++ ){
@@ -352,45 +404,9 @@ config::test_clash( object *new_object ){
     }
                                             // Loop over the objects.
     for(int i = 0; i < obj_list.size(); i++){
-        my_obj  = obj_list.get(i);
-        theta2  = my_obj->orientation;
-        o_type2 = simple_min( my_obj->o_type, max_o_type );
-
-                                            // Loop over the atoms my_obj
-        for(int j = 0; j < the_topology->molecules(o_type2).n_atoms; j++ ){
-                                            // Get atom information
-            t2  =  the_topology->molecules(o_type2).the_atoms(j).type;
-            dx2 =  the_topology->molecules(o_type2).the_atoms(j).x_pos;
-            dy2 =  the_topology->molecules(o_type2).the_atoms(j).y_pos;
-            r2  =  the_topology->atom_sizes(t2);      // Get radius
-                                            // Calculate atom position
-            x2  =  my_obj->pos_x + dx2 * cos(theta2) - dy2 * sin(theta2);
-            y2  =  my_obj->pos_y + dx2 * sin(theta2) + dy2 * cos(theta2);
-
-            for( int k = 0; k < the_topology->molecules(o_type1).n_atoms; k++ ){
-                                            // Get atom information
-                t1  =  the_topology->molecules(o_type1).the_atoms(j).type;
-                dx1 =  the_topology->molecules(o_type1).the_atoms(j).x_pos;
-                dy1 =  the_topology->molecules(o_type1).the_atoms(j).y_pos;
-                r1  =  the_topology->atom_sizes(t1);  // Get radius
-                                            // Calculate atom position
-                x1  =  new_object->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
-                y1  =  new_object->pos_y + dx1 * sin(theta1) + dy1 * cos(theta1);
-
-                dx = (x2-x1);
-                dy = (y2-y1);
-                                            // Handle periodic conditions
-                if( dx > (x_size - r1 - r2 )) dx -= x_size;
-                if( dx < (r1 + r2 - x_size )) dx += x_size;
-                if( dy > (y_size - r1 - r2 )) dy -= y_size;
-                if( dy < (r1 + r2 - y_size )) dy += y_size;
-
-                r = dx*dx+dy*dy;
-                if( r < ((r1+r2)*(r1+r2))) return (true);
-            }
-        }
+        if(test_clash( obj_list.get(i),new_object)) return true;
     }
-    return (false);
+    return false;
 }
 
 /**
@@ -496,9 +512,9 @@ bool config::expand(double dl, int max_try ){
         obj_list.get(i)->expand(dl);        // Move objects in rescaled box
     }
     for(i=0;i<max_try;i++){
-      if(this->test_clash()) /* jiggle and jolt */;
+      if(test_clash()) jiggle();
     }
-    return this->test_clash();
+    return test_clash();
 }
 
 /**
@@ -639,4 +655,35 @@ config::ps_atoms( std::ostream& dest ){
             }
         }
     }
+}
+
+bool
+config::has_clash( int i ){
+    for(int j=0; j< obj_list.size(); j++ ){
+        if (i!=j) {
+            if( test_clash( obj_list.get(i), obj_list.get(j) )) return true;
+        }
+    }
+    return false;
+}
+
+/***
+ * \brief Shake objects a bit to try and remove bad contacts
+ */
+void
+config::jiggle(){
+    for( int i=0; i < obj_list.size(); i++){
+        if( has_clash( i )) jiggle( obj_list.get(i) );
+    }
+}
+
+/***
+ * @brief Shake an object a little
+ *
+ * @param my_obj the object to jiggle
+ */
+void
+config::jiggle(object *my_obj){
+   my_obj->move(1.0, x_size, y_size, is_periodic);
+   my_obj->rotate(M_PI);
 }
