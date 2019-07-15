@@ -111,7 +111,8 @@ void    object::rotate(double max_angle){
  * \brief Distance to a second object.
  *
  * Calculate the distance to obj2, using if there are periodic boundary conditions
- * the closest image of obj2.
+ * the closest image of obj2. This is not really usefil for molecules but potentially
+ * could help with exclude lists etc and optimization.
  *
  * @param obj2      The second object.
  * @param x_size    The width of the box
@@ -120,7 +121,6 @@ void    object::rotate(double max_angle){
  *
  * @return          The distance to object 2.
  *
- * @todo            Not really useful for molecules...
  */
 double  object::distance(object* obj2, double x_size, double y_size, bool periodic){
     double dx, dy, dx2, dy2;
