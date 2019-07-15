@@ -36,7 +36,17 @@ topology::topology() {                          // An empty topology has no mole
 }
 
 topology::topology(topology* orig){		// @todo Stub should copy
-    assert(false);                  		// Stub not ready to be used
+    n_atom_types = orig->n_atom_types;
+    atom_names.resize(n_atom_types);
+    atom_sizes.resize(n_atom_types);
+    for( size_t i =0; i < n_atom_types; i++ ){
+        atom_names(i).assign(orig->atom_names(i));
+        atom_sizes(i) = orig->atom_sizes(i); 
+    }
+    n_molecules = orig->n_molecules;
+    for( size_t i =0; i < n_atom_types; i++ ){
+        molecules(i) = new molecule( orig->molecules(i));
+    }
 }
 
 topology::topology(const char *filename) {      // Read the topology from a named file.

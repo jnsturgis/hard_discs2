@@ -7,13 +7,13 @@ molecule::molecule(){
 }
 
 molecule::molecule(molecule *orig){
-//    int     i;
+    int     i;
     mol_name = orig->mol_name;
     n_atoms = orig->n_atoms;
     the_atoms.resize( n_atoms );
-//    for( i=0; i< n_atoms; i++ )
-//        the_atoms(i).copy( orig->the_atoms(i) );
-    assert( false );
+    for( i=0; i< n_atoms; i++ ){
+        the_atoms(i).copy( orig->the_atoms(i));
+    }
 }
 
 molecule::molecule(FILE *source){
