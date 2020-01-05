@@ -4,6 +4,12 @@
  * @author      James Sturgis
  * @date        April 6, 2018
  * @version     1.0
+ *
+ * 30 december 2019 - implement non-rectangular areas (necessarily aperiodic)
+ * Signaled in file format by x_size == y_size == 0.0.
+ * Configuration boundary is then given by a polygon in the following lines
+ *	N_vertice: number of vertices in polygon (second line of file)
+ *	x y: coordinates of vertices one per line.
  */
 
 #include <float.h>
@@ -27,6 +33,9 @@ config::config() {
     obj_list     = o_list();
     the_topology = (topology *)NULL;
     is_periodic  = false;
+    is_rectangle = true;
+    n_vertex     = 0;
+    poly         = (polygon *)NULL;
 }
 
 /**
@@ -48,7 +57,7 @@ config::config() {
  *              way. If there is an error this should be apparent even if the
  *              structure is still valid.
  * @todo        Read from file if periodic conditions or not.
- * @todo        Enrich file to handle non-rectangular areas.
+ * @todo        Enrich file to handle non-rectangular areas (being integrated)
  * @todo        Integrate an object constructor from a file saves 4 variables
  *              and a couple of lines of code.
  */
@@ -72,6 +81,11 @@ config::config_read(std::istream& ff){
     // Plus a string for each line
     string      line;
     
+    is_periodic  = true;                             // Set up defaults.
+    is_rectangle = true;
+    n_vertex     = 0;
+    poly         = (polygon *)NULL;
+
     // Check if the file exists
     if(ff.fail()) {
         throw runtime_error("Could not open configuration file\n");
@@ -87,16 +101,42 @@ config::config_read(std::istream& ff){
     // Can also check if the line has the right number of fields
     if (!(iss >> x_size >> y_size)) {
         throw range_error("First line of the configuration file should be x_size y_size, exiting ...\n");
-    }
-    
+    }    
     // Clear iss
     iss.clear();
-    
-    // Next line
+   
+    ///////////////////////////////////
+    // Here we handle the case of a non-rectangular configuration
+    if( x_size == 0.0 ){
+        is_rectangle = false;
+        is_periodic = false;
+
+        getline(ff, line);
+        iss.str(line);
+        if( !(iss >> n_vertex )){
+            throw range_error("Failed to read number of vertices, exiting ...\n");
+        }
+        iss.clear();
+        poly = new polygon( n_vertex );
+
+        double x_coord, y_coord;
+        for( int i = 0; i < n_vertex; i++){
+            getline(ff, line);		// Should check read OK
+            iss.str(line);
+            if( !(iss >> x_coord >> y_coord )){
+        	throw range_error("Error reading bounding polygon coordinates, exiting ...\n");
+            }
+            poly->add_vertex( x_coord, y_coord );
+            iss.clear();
+        }
+    }
+    ///////////////////////////////////
+ 
+    // Next line the number of objects in the configuration
     getline(ff, line);
     iss.str(line);
     if (!(iss >> n_obj)) {
-        throw range_error("Second line of the configuration file should be the number of objects, exiting ...\n");
+        throw range_error("Failed to read number of objects, exiting ...\n");
     }
     
     // Clear iss again
@@ -125,10 +165,12 @@ config::config_read(std::istream& ff){
     saved_energy = 0.0;
     the_topology = (topology *)NULL;                // Topologies are not included in
                                                     // the file.
-    is_periodic = true;                             // This should be read from file.
 
     assert(n_obj == n_objects() );                  // Should check the configuration
                                                     // is alright.
+    // Include some extra tests.
+    // Non 0 area for configuration
+    // All objects are inside the configuration
 }
 
 /**
@@ -138,12 +180,14 @@ config::config_read(std::istream& ff){
 config::config(config& orig) {
     object  *my_obj1;
     object  *my_obj2;
-
     x_size         = orig.x_size;
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
     unchanged      = orig.unchanged;
-    the_topology   = new topology(orig.the_topology);
+    if( orig.the_topology ) 
+        the_topology   = new topology(orig.the_topology);
+    else
+        the_topology = NULL;
     is_periodic    = orig.is_periodic;
     obj_list.empty();
     for(int i = 0; i < orig.n_objects(); i++){
@@ -152,6 +196,46 @@ config::config(config& orig) {
                 my_obj1->pos_y, my_obj1->orientation);
         obj_list.add(my_obj2);
     }
+    // Add non-periodic bits
+    is_rectangle   = orig.is_rectangle;
+    n_vertex       = orig.n_vertex;
+    if( orig.poly )
+        poly       = new polygon( orig.poly );
+    else
+        poly       = NULL;
+}
+
+/**
+ * Copy constructor
+ * @param orig pointer to the original configuration to be copied.
+ */
+config::config(config* orig) {
+    object  *my_obj1;
+    object  *my_obj2;
+
+    x_size         = orig->x_size;
+    y_size         = orig->y_size;
+    saved_energy   = orig->saved_energy;
+    unchanged      = orig->unchanged;
+    if( orig->the_topology ) 
+        the_topology   = new topology(orig->the_topology);
+    else
+        the_topology = NULL;
+    is_periodic    = orig->is_periodic;
+    obj_list.empty();
+    for(int i = 0; i < orig->n_objects(); i++){
+        my_obj1 = orig->obj_list.get(i);
+        my_obj2 = new object( my_obj1->o_type, my_obj1->pos_x,
+                my_obj1->pos_y, my_obj1->orientation);
+        obj_list.add(my_obj2);
+    }
+    // Add non-periodic bits
+    is_rectangle   = orig->is_rectangle;
+    n_vertex       = orig->n_vertex;
+    if( orig->poly )
+        poly       = new polygon( orig->poly );
+    else
+        poly       = NULL;
 }
 
 /**
@@ -159,14 +243,20 @@ config::config(config& orig) {
  * uses new probably need explicit destroy.
  */
 config::~config() {
-    //~ if(the_topology) delete(the_topology);
+    if(the_topology) delete(the_topology);
+    if(poly) delete(poly);
 }
 
 /**
  * @return The area of the configuration.
  *
  */
-double config::area() { return x_size * y_size;}
+double config::area() {
+    if( is_rectangle )
+        return x_size * y_size;
+    else
+        return poly->area();
+}
 
 /**
  * This function calculates the energy of a configuration by comparing using
@@ -223,8 +313,12 @@ double config::energy(force_field *&the_force) {
                     }
                 }                           // Calculate interaction with wall
                 if(! is_periodic ){         // if not periodic conditions.
-                    value += my_obj1->box_energy( the_force, the_topology,
+                    if( is_rectangle )
+                        value += my_obj1->box_energy( the_force, the_topology,
                             x_size, y_size );
+                    else
+                        value += my_obj1->box_energy( the_force, the_topology,
+                            poly );
                 }
                 my_obj1->set_energy(value); // Set the energy of the object
             }                               // End of the recalculation.
@@ -254,7 +348,12 @@ int config::write( FILE *dest ){
     int     i;
     object  *this_obj;
 
-    fprintf( dest, "%9f2 %9f2 \n", x_size, y_size );
+    if( is_rectangle )
+        fprintf( dest, "%9f %9f \n", x_size, y_size );
+    else {
+        fprintf( dest, "%9f %9f \n", 0.0, 0.0 );
+        poly->write( dest );
+    }
     fprintf( dest, "%d\n", obj_list.size());
     for(i = 0; i< obj_list.size(); i++){    // For each object in configuration
         this_obj = obj_list.get(i);         // Get the object and
@@ -281,7 +380,12 @@ int config::write(std::ostream& dest){
     
     // Put the header and number of objects inside
     // Using boost for formatting, which seems the proper way in c++
-    dest << format("%9f2 %9f2 \n") % x_size % y_size;
+    if( is_rectangle )
+        dest << format("%9f %9f \n") % x_size % y_size;
+    else {
+        dest << format("%9f %9f \n") % 0.0 % 0.0;
+        poly->write( dest );
+    }
     dest << format("%d\n") % obj_list.size();
 
     for(i = 0; i< obj_list.size(); i++){    // For each object in configuration
@@ -315,6 +419,10 @@ config::test_clash( object *obj1, object *obj2 ){
 
     double  t1, t2, dx1, dx2, dy1, dy2, r1, r2, x1, x2, y1, y2;
     double  dx, dy, r;
+
+    if( ! the_topology ){		// No topology (so no size) just points.
+        return(( obj1->pos_x == obj2->pos_x ) && ( obj1->pos_y == obj2->pos_y ));
+    }
 
     for(int j = 0; j < the_topology->molecules(o_type2).n_atoms; j++ ){
                                         // Get atom information
@@ -397,9 +505,13 @@ config::test_clash( object *new_object ){
                                             // Calculate atom position
             x1  =  new_object->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
             y1  =  new_object->pos_y + dx1 * sin(theta1) + dy1 * cos(theta1);
-            if(( x1 < r1 ) || ( (x1 + r1) > x_size ) || ( y1 < r1 ) || 
-                ( (y1 + r1) > y_size ))
-                return true;
+            if( is_rectangle ){
+                if(( x1 < r1 ) || ( (x1 + r1) > x_size ) || ( y1 < r1 ) ||
+                    ( (y1 + r1) > y_size ))
+                    return true;
+            } else {
+                if( ! poly->is_inside( x1, y1, r1 )) return true;
+            }
         }
     }
                                             // Loop over the objects.
@@ -465,7 +577,7 @@ bool config::check(){
  * @todo        Currently just a stub, returns 1.0
  */
 double config::rms(const config& ref){
-    return 1.0;
+    return 0.0;
 }
 
 /**
@@ -480,14 +592,18 @@ double config::rms(const config& ref){
 bool config::expand(double dl){
     int     i;
 
-    x_size *= dl;                           // Expand boundary
-    y_size *= dl;
+    if( is_rectangle ){
+        x_size *= dl;                           // Expand boundary
+        y_size *= dl;
+    } else {
+        poly->expand( dl );
+    }
     unchanged = false;                      // The energies will be different
     for(i=0;i<obj_list.size();i++){
         obj_list.get(i)->recalculate = true;// Also for the objects
         obj_list.get(i)->expand(dl);        // Move objects in rescaled box
     }
-    return this->test_clash();
+    return (test_clash());
 }
 
 /**
@@ -504,8 +620,12 @@ bool config::expand(double dl){
 bool config::expand(double dl, int max_try ){
     int     i;
 
-    x_size *= dl;                           // Expand boundary
-    y_size *= dl;
+    if( is_rectangle ){
+        x_size *= dl;                           // Expand boundary
+        y_size *= dl;
+    } else {
+        poly->expand( dl );
+    }
     unchanged = false;                      // The energies will be different
     for(i=0;i<obj_list.size();i++){
         obj_list.get(i)->recalculate = true;// Also for the objects
@@ -525,7 +645,7 @@ bool config::expand(double dl, int max_try ){
  * @param dl_max the scaling parameter.
  */
 void config::move(int obj_number, double dl_max){
-    obj_list.get(obj_number)->move(dl_max, x_size, y_size, is_periodic );
+    obj_list.get(obj_number)->move(dl_max, x_size, y_size, is_periodic ); // TODO: Need to fix this for non-rectangles
     obj_list.get(obj_number)->rotate(M_2PI);// Mix for the moment move and rotate
 }
 
@@ -555,7 +675,7 @@ void    config::invalidate_within(double distance, int index){
     for(int i=0; i< n_objects(); i++)       // For each object in the cnfiguration
       if (i!= index){                       // That is difference
         obj2 = obj_list.get(i);             // Check distance
-        if( obj1->distance(obj2, x_size, y_size, is_periodic) < distance )
+        if( obj1->distance(obj2, x_size, y_size, is_periodic) < distance ) // TODO: Need to check works for non-rectangles
             obj2->recalculate = true;       // and set flag if necessary
     }
 }
@@ -594,7 +714,10 @@ void    config::add_object(object* orig ){
 void    
 config::ps_atoms( std::ostream& dest ){
 /*  Need to reorganize for topology with molecules...
-    should incorporate atom draw radius in topology (so no FF needed)... */
+    should incorporate atom draw radius in topology (so no FF needed)... 
+
+    TODO handle is_periodic and is_rectangle correctly
+*/
 
     object  *my_obj;
     double  theta, dx, dy, r, x, y;
@@ -684,6 +807,6 @@ config::jiggle(){
  */
 void
 config::jiggle(object *my_obj){
-   my_obj->move(1.0, x_size, y_size, is_periodic);
+   my_obj->move(1.0, x_size, y_size, is_periodic);		// TODO: Need to check works for non-rectangles
    my_obj->rotate(M_PI);
 }

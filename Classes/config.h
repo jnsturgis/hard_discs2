@@ -76,6 +76,7 @@
 #define CONFIG_H
 
 #include "o_list.h"
+#include "polygon.h"
 
 using namespace std;
 
@@ -90,44 +91,54 @@ public:
     virtual ~config();              ///< Destroy a conformation
 
 /* TODO Class interface needs cleaning */
-
-    void    add_topology(topology *a_topology
-                                 ); ///< Attach a topology to the configuration
-    void    add_object(object *orig
-                                 ); ///< Insert an object in the configuration
-    int     write(std::ostream& dest
+/* Input and output functions */
+    int         write(std::ostream& dest
                               );    ///< Write the conformation to a stream.
-    int     write(FILE *dest);      ///< Write the conformation to a 'c' file.
-    void    ps_atoms(std::ostream& dest
+    int         write(FILE *dest);  ///< Write the conformation to a 'c' file.
+    void        ps_atoms(std::ostream& dest
                                );   ///< Write the postscript part for the atoms.
 
-    double  energy(force_field *&the_force
-                               );   ///< Calculate the energy of a conformation using the given force field.
-    double  area();                 ///< Return the total area of the configuation.
-    int     object_types();         ///< The number of different object types.
-    int     n_objects();            ///< The number of objects in configuration.
-
-    bool    expand( double dl );    ///< Expand the surface area by a factor dl.
-    bool    expand( double dl, int max_try );    ///< Expand the surface area by a factor dl allow several attempts to remove clashes.
-    void    move(int obj_number, double dl_max 
-                                );  ///< Move an object in the configuration.
-    void    rotate(int obj_number, double theta_max
-                                 ); ///< Rotate an object in the configuration.
-    void    invalidate_within(double distance, int index 
-                                 ); ///< Mark energies for recalculation.
-    bool    test_clash( object *new_object 
-                                 ); ///< Check if there is a clash to insert new object.
-    bool    test_clash();           ///< Check if there are any clashes between objects.
-    double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
-
-    /* Variables should be more private - the copy function is the main problem */
+/* Setting up a configuration */
+    void        add_topology(topology *a_topology
+                                 ); ///< Attach a topology to the configuration
+    void        add_object(object *orig
+                                 ); ///< Insert an object in the configuration
     double      x_size;             ///< The width of the configuration
     double      y_size;             ///< The height of the configuration
     bool        unchanged;          ///< Is the configuration unchanged since the last evaluation of energy.
     bool        is_periodic;        ///< Use periodic boundary conditions
 
+    bool        is_rectangle;       ///< Use x_size, y_size rather then a polygon.
+    int		n_vertex;	    ///< Number of vertices in polygon (doublon)
+    polygon     *poly;              ///< The bounding polygon
+
+/* Obtaining information on the configuration */
+    double  area();                 ///< Return the total area of the configuation.
+    int     object_types();         ///< The number of different object types.
+    int     n_objects();            ///< The number of objects in configuration.
+
+    double  energy(force_field *&the_force
+                               );   ///< Calculate the energy of a conformation using the given force field.
+    bool    test_clash( object *new_object 
+                                 ); ///< Check if there is a clash to insert new object.
+    bool    test_clash();           ///< Check if there are any clashes between objects.
+    double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
+
+/* Manipulating the configuration */
+    bool    expand( double dl );    ///< Expand the surface area by a factor dl.
+    bool    expand( double dl, int max_try 
+                              );    ///< Expand the surface area by a factor dl allow several attempts to remove clashes.
+    void    move(int obj_number, double dl_max 
+                                );  ///< Move an object in the configuration.
+    void    rotate(int obj_number, double theta_max
+                                 ); ///< Rotate an object in the configuration.
+
+    void    invalidate_within(double distance, int index 
+                                 ); ///< Mark energies for recalculation.
+
 private:
-    bool        test_clash( object *o1, object *o2); ///< Check if there is a clash between 2 objects.
+    bool        test_clash( object *o1, object *o2
+                                 ); ///< Check if there is a clash between 2 objects.
     bool        has_clash( int i ); ///< check if the object with index i has a clash. 
     void        jiggle();           ///< Shake objects a bit to try and remove bad contacts.
     void        jiggle(object *o1); ///< Shake the object a bit to try and remove bad contacts.

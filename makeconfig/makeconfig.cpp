@@ -54,6 +54,8 @@ main(int argc, char **argv)
 
     float   scale = 1.0;
     out_name = force_name = topo_name = NULL;
+    the_force = (force_field *)NULL;
+    a_topology = (topology *)NULL;
 
     // Getopt based argument handling.
 
@@ -112,16 +114,33 @@ main(int argc, char **argv)
         return 1;
     }
     // Setup topology and forcefield for insertions.
-    if( force_name != NULL ){
-        the_force  = new force_field(force_name); // Need to implement
-    } else {
-        the_force  = new force_field(1.0);	// Default force field 1 atom hard disk
+    try{
+        if( force_name != NULL ){
+            the_force  = new force_field(force_name); // Need to implement
+        } else {
+            the_force  = new force_field(1.0);	// Default force field 1 atom hard disk
+        }
+    }
+    catch(...){
+        std::cerr << "Unable to setup force field. Aborting!\n";
+        if (the_force) delete the_force;
+        delete a_config;
+        return(EXIT_FAILURE);
     }
 
-    if( topo_name != NULL){			// Why does topology depend on force field???!!!
-        a_topology = new topology(topo_name);   // Need to implement
-    } else {
-        a_topology = new topology(1.0);		// Default topology 1 unit circle
+    try{
+        if( topo_name != NULL){			// Why does topology depend on force field???!!!
+            a_topology = new topology(topo_name);   // Need to implement
+        } else {
+            a_topology = new topology(1.0);		// Default topology 1 unit circle
+        }
+    }
+    catch(...){
+        std::cerr << "Unable to setup topology. Aborting!\n";
+        if(a_topology) delete a_topology;
+        delete the_force;
+        delete a_config;
+        return(EXIT_FAILURE);
     }
 
     a_config->add_topology(a_topology);         // Assocuate topology with the configuration.
@@ -140,6 +159,16 @@ main(int argc, char **argv)
     
     for( int i = 0; i < (argc - optind); i++) {
         n = std::atof( argv[ optind+i ] );
+        if( topo_name == NULL && i > 0){	// Need to add another simple molecule to the topology
+            a_topology->add_molecule(1.0);
+        }
+        if( i >= (int)a_topology->n_molecules ){
+            std::cerr << "The topology does not contain sufficient molecule types " << (i+1) << " required! Aborting!\n";
+            delete a_config;
+            if( the_force ) delete the_force;
+            return EXIT_FAILURE;
+        }
+
         for(int j = 0; j < n; j++ ){            // Try to place 'n' new objects of type i
             clash = true;
             for( int k = 0; ((k < max_try) && clash ); k++ ){
@@ -154,6 +183,8 @@ main(int argc, char **argv)
                 a_config->add_object( my_object );
             } else {
 		std::cerr << placement_failure;
+                delete a_config;
+                if(the_force) delete the_force;
                 exit(EXIT_FAILURE);
             }
         }
@@ -176,6 +207,7 @@ main(int argc, char **argv)
 
     if( dest != stdout ) fclose( dest );
     delete a_config;
+    if(the_force) delete the_force;
     return EXIT_SUCCESS;
 }
 

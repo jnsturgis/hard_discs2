@@ -30,3 +30,19 @@
 *.exe
 *.out
 *.app
+
+# Executables for this project
+
+NVT/NVT
+makeconfig/makeconfig
+shrinkconfig/shrinkconfig
+config2eps/config2eps
+
+test/config_test
+test/polygon_test
+test/topology_test
+
+# Compiled documentation
+
+doxygen/html
+doxygen/latex

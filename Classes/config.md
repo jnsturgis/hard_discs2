@@ -22,11 +22,18 @@ and the **rotation** of the object (in degrees) from the reference orientation i
 
 Size and position are measured in arbitrary length units?
 
+The V2 configuration file is backwards compatibl with V1
+If x_size and y_size a 0.0 then...
+before the nobject line is a polygon definition if the form
+ * n_vertices
+ * x_coord, y_coord...
+
+
 ## Enhancements to implement
 
 Allow comments in the file: # or % to end of line ?
 Allow blank lines in the file.
-Implement V2 (maintain backward compatibility) with polygonal areas not rectangle 0,0,x_size,y_size. 
-This relates to issue #1 and is necessary for analysis of AFM image patches.
+// Implement V2 (maintain backward compatibility) with polygonal areas not rectangle 0,0,x_size,y_size. 
+// This relates to issue #1 and is necessary for analysis of AFM image patches.
 
 

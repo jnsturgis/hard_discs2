@@ -10,7 +10,8 @@ binaries:
 	cd NVT && $(MAKE) $(MFLAGS);
 	cd makeconfig && $(MAKE) $(MFLAGS);
 	cd config2eps && $(MAKE) $(MFLAGS);
-	cd shrinkconfig && $(MAKE) $(MFLAGS)
+	cd shrinkconfig && $(MAKE) $(MFLAGS);
+	cd test && $(MAKE) $(MFLAGS)
 
 clean:
 	cd NVT && $(MAKE) clean ;
@@ -18,6 +19,7 @@ clean:
 	cd config2eps && $(MAKE) clean ;
 	cd shrinkconfig && $(MAKE) clean;
 	cd Classes && $(MAKE) clean ;
+	cd test && $(MAKE) clean;
 	cd doxygen && rm -rf html doxygen.log
 
 

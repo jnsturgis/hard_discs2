@@ -37,8 +37,14 @@ topology::topology(topology* orig){		// Make a deep copy
         atom_sizes(i) = orig->atom_sizes(i); 
     }
     n_molecules = orig->n_molecules;
-    for( size_t i =0; i < n_atom_types; i++ ){
-        molecules(i) = new molecule( orig->molecules(i));
+    molecules.resize(n_molecules);
+    for( size_t i =0; i < n_molecules; i++ ){
+        molecules(i).mol_name.assign(orig->molecules(i).mol_name);
+        molecules(i).n_atoms = orig->molecules(i).n_atoms;
+        molecules(i).the_atoms.resize(molecules(i).n_atoms);
+        for(int j=0; j< molecules(i).n_atoms; j++ ){
+            molecules(i).the_atoms(j) = orig->molecules(i).the_atoms(j);
+        }
     }
 }
 
@@ -57,20 +63,12 @@ topology::topology(FILE *source) {              // Read the topology from an ope
 }
 
 topology::topology(float size) {
-    atom *an_atom = new atom(0, 0.0, 0.0, "red" );
-
-    n_atom_types = 1;
-    atom_names.resize( n_atom_types );
-    atom_sizes.resize( n_atom_types );
-    atom_names(0) = "Simple";
-    atom_sizes(0) = size;
-    n_molecules  = 1;
-    molecules.resize( n_molecules );
-    molecules[0].rename( "Hard disk" );
-    molecules[0].add_atom( an_atom );
+    n_atom_types = 0;
+    n_molecules  = 0;
+    add_molecule( size );
 }
 
-topology::~topology() {
+topology::~topology() {				// Need to destroy the atoms of the molecules too !!! BUG
     molecules.resize(0);			// Destroy the molecules
     n_molecules = 0;
     atom_sizes.resize(0);
@@ -129,5 +127,27 @@ topology::write(ostream& dest){            /// @todo Error handling and comments
     for( i = 0; i < n_molecules; i++ )
         molecules(i).write( dest );
     return true;
+}
+
+void
+topology::add_molecule( float r ){
+    int  i;
+    atom *an_atom = NULL;
+
+    i = n_atom_types;
+    n_atom_types++;
+    atom_names.resize( n_atom_types );
+    atom_sizes.resize( n_atom_types );
+    atom_names(i) = "Simple";
+    atom_sizes(i) = r;
+
+    an_atom = new atom(i, 0.0, 0.0, "red" );
+
+    i = n_molecules;
+    n_molecules++;
+    molecules.resize( n_molecules );
+    molecules[i].rename( "Hard disk" );
+    molecules[i].add_atom( an_atom );
+    delete an_atom;
 }
 

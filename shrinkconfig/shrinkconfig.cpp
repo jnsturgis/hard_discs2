@@ -21,7 +21,7 @@ using namespace std;
 
 void usage()
 {
-    std::cerr << "Usage: makeconfig [-v][-p][-t topo_file][-o out_file][-f force_file]"
+    std::cerr << "Usage: shrinkconfig [-v][-p][-t topo_file][-o out_file][-f force_file]"
         "[-s scale_factor][-a attempts] [source] \n";
 }
 
@@ -30,8 +30,8 @@ main(int argc, char **argv)
 {
     int     	c;
 
-    config      *a_config;
-    topology	*a_topology;
+    config      *a_config = (config *)NULL;
+    topology	*a_topology = (topology *)NULL;
  
     double      scale = 1.0;                    // Set default values
     char        *out_name, *topo_name;
@@ -91,20 +91,51 @@ main(int argc, char **argv)
 	}
     }
 
-    if(( argc - optind ) > 0 ){	                // Read source configuration
-        a_config = new config( argv[ optind ] );
-        if( verbose )
-            std::cerr << "Input read from " << argv[ optind ] << "\n";
-    } else {
-        a_config = new config(std::cin);
-        if( verbose )
-            std::cerr << "Input read from 'stdin'\n";
+    try{
+        if(( argc - optind ) > 0 ){	                // Read source configuration
+            a_config = new config( argv[ optind ] );
+            if( verbose )
+                std::cerr << "Input read from " << argv[ optind ] << "\n";
+        } else {
+            a_config = new config(std::cin);
+            if( verbose )
+                std::cerr << "Input read from 'stdin'\n";
+        }
+    }
+    catch(...){
+        std::cerr << "Failed to read configuration\n";
+        std::cerr << "Program aborting\n";
+        if( a_config ){
+            delete a_config;
+        }
+        exit(EXIT_FAILURE);        
     }
 
-    if( topo_name != NULL){			// Why does topology depend on force field???!!!
-        a_topology = new topology(topo_name);   // Need to implement
-    } else {
-        a_topology = new topology(1.0);		// Default topology 1 unit circle
+    try{
+        if( topo_name ){			    // Why does topology depend on force field???!!!
+            a_topology = new topology(topo_name);   // Need to implement
+        } else {
+            a_topology = new topology(1.0);         // Default topology 1 unit circle
+            for( int i = 0; i < a_config->object_types(); i++ ){
+                a_topology->add_molecule(1.0);
+            }
+        }
+    }
+    catch(...){
+        std::cerr << "Failed to read topology\n";
+        std::cerr << "Program aborting\n";
+        delete a_config;
+        if( a_topology ){
+            delete a_topology;
+        }
+        exit(EXIT_FAILURE);        
+    }
+
+    if( ((int) a_topology->n_molecules) <= a_config->object_types() ){
+        std::cerr << "Not enough molecule types in the topology " << a_config->object_types()+1 << " are required.\n";
+        delete a_config;
+        delete a_topology;
+        exit(EXIT_FAILURE);
     }
 
     if( verbose ){
@@ -114,11 +145,13 @@ main(int argc, char **argv)
     }
 
     a_config->add_topology(a_topology);         // Associate topology with the configuration.
+    a_topology = (topology *)NULL;		// Unnecessary but to be tidy and avoid double deletes.
 
     if(a_config->expand( scale , max_try )){    // Rescale configuration after placement.
         if( verbose ){
             std::cerr << "Unable to remove clashes... try increasing attempts or scale\n";
         }
+        delete a_config;
         return EXIT_FAILURE;
     }
 
@@ -129,7 +162,8 @@ main(int argc, char **argv)
 	    std::cerr << "Unable to open" << out_name << "for writing, using stdout!\n";
             dest = stdout;
         }
-    }    
+    }
+    
     assert( dest );
 
     // Write the configuration

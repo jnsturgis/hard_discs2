@@ -187,16 +187,29 @@ int main(int argc, char** argv) {
     }
 
     if( verbose ) logger << "Reading configuration.\n";
-    if( in_name.length() > 0 ){
-        current_state = new config(in_name);
-    } else {
-        current_state = new config(std::cin);
+    try{
+        if( in_name.length() > 0 ){
+            current_state = new config(in_name);
+        } else {
+            current_state = new config(std::cin);
+        }
+    }
+    catch(...){
+        logger << "Error reading configuration aborting.\n";
+        if( current_state ) delete current_state;
     }
     if( verbose ) logger << "Read configuration successfully.\n";
 
     // Load the force field from the force field file
     if( verbose ) logger << "Reading force field from " << force_name << ".\n";
-    the_forces = new force_field(force_name.c_str());
+    try{
+        the_forces = new force_field(force_name.c_str());
+    }
+    catch(...){
+        logger << "Error reading force field. Aborting.\n";
+        delete current_state;
+        if( the_forces ) delete the_forces;
+    }
     if( verbose ){
         logger << "Read force_field successfully.\n";
         logger << "==============================\n";
@@ -205,7 +218,15 @@ int main(int argc, char** argv) {
     }
     // Load the topology from the topology file
     if( verbose ) logger << "Reading topology from" << topo_name << ".\n";
-    a_topology = new topology(topo_name.c_str());
+    try{
+        a_topology = new topology(topo_name.c_str());
+    }
+    catch(...){
+        logger << "Error reading topology. Aborting.\n";
+        delete current_state;
+        delete the_forces;
+        if( a_topology ) delete a_topology;
+    }
     if( verbose ){
         logger << "Read topology file successfully.\n";
         logger << "==============================\n";
@@ -237,7 +258,10 @@ int main(int argc, char** argv) {
     
     i = 0;
     while(U1 > the_forces->big_energy){
+        if( the_integrator ) delete the_integrator;
         if( i > 2000*N1 ){
+            delete the_forces;
+            delete current_state;
             fatal_error("Unable to adjust initial configuration in %d steps", i );
         }
         the_integrator = new integrator(the_forces);

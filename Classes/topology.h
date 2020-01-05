@@ -44,7 +44,9 @@ public:
 */
     int     write(const char *filename); ///< Write the topology to a named file. (Absent)
     int     write(FILE *dest);  	 ///< Write the topology to a file.
-    int     write(std::ostream& dest ); ///< Write the topology to c++ ofstream.
+    int     write(std::ostream& dest );  ///< Write the topology to c++ ofstream.
+
+    void    add_molecule( float r );     ///< Add a new molecule type to the topology circle radius r.
 
     size_t  n_atom_types;                ///< Total number of different atom types.
     vector<std::string>    atom_names;   ///< Labels for the different types of atoms.

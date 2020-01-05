@@ -273,6 +273,26 @@ double  object::box_energy(
     return value;
 }
 
+double  object::box_energy(
+	force_field *the_force,
+        topology *the_topology,
+        polygon *the_box ){
+    int     n1, i;
+    double  x1, y1, r;
+    atom    *at1;
+    double  value = 0.0;
+
+    n1 = the_topology->molecules(o_type).n_atoms;
+    for(i=0;i<n1;i++){
+        at1 = &(the_topology->molecules(o_type).the_atoms(i));
+        x1 = pos_x - sin(orientation)*at1->y_pos + cos(orientation)*at1->x_pos;
+        y1 = pos_y + cos(orientation)*at1->y_pos + sin(orientation)*at1->x_pos;
+        r  = the_force->size(at1->type);
+        if(!the_box->is_inside(x1,y1,r)) value += the_force->big_energy;
+    }
+    return value;
+}
+
 /**
  * @brief   Increase all dimensions by multiplying by the factor dl.
  * @param   dl  Multiplication factor.

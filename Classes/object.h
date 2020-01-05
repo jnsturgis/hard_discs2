@@ -14,6 +14,7 @@
 
 #include "force_field.h"
 #include "topology.h"
+#include "polygon.h"
 #include <fstream>
 #include <sstream>
 
@@ -44,6 +45,9 @@ public:
                 topology *the_topology,
                 double x_size,
                 double y_size );            ///< The energy due to the position in the box.
+    double  box_energy(force_field *the_force,
+                topology *the_topology,
+                polygon *the_box );         ///< The energy due to the position in the box.
     bool    recalculate;                    ///< Flag set if energy needs recalculation
     double  pos_x, pos_y;                   ///< Position of the object
     double  orientation;                    ///< Rotational orientation
