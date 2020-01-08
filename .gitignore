@@ -38,6 +38,8 @@ makeconfig/makeconfig
 shrinkconfig/shrinkconfig
 config2eps/config2eps
 
+analysis/pcf
+
 test/config_test
 test/polygon_test
 test/topology_test

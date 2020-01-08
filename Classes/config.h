@@ -59,8 +59,6 @@
  * * rms( ref ) compare the configuration with that a reference configuration 'ref'
  *              and return the rms distance between atoms in the two configurations.
  *
- * @todo Implement non-box boundaries as used for pcf calculations from experimental
- *       configurations measured by AFM.
  * @todo Forcefield should be associated with the configuration so can detect changes
  *       that will invalidate the saved_energy, also will avoid sending forcefield info
  *       for writing postscript which is illogical.
@@ -70,6 +68,7 @@
  *       types of ensemble than NVT etc.
  * @todo Common interface for modification methods, so they can be used
  *       interchangeably in the integrators.
+ * @todo Replace o_list by std::vector<object>
 */
 
 #ifndef CONFIG_H
@@ -135,6 +134,7 @@ public:
 
     void    invalidate_within(double distance, int index 
                                  ); ///< Mark energies for recalculation.
+    object	*get_object(int index); ///< find an object in the configuration (JS 8/1/20)
 
 private:
     bool        test_clash( object *o1, object *o2

@@ -11,7 +11,8 @@ binaries:
 	cd makeconfig && $(MAKE) $(MFLAGS);
 	cd config2eps && $(MAKE) $(MFLAGS);
 	cd shrinkconfig && $(MAKE) $(MFLAGS);
-	cd test && $(MAKE) $(MFLAGS)
+	cd test && $(MAKE) $(MFLAGS);
+	cd analysis && $(MAKE) $(MFLAGS)
 
 clean:
 	cd NVT && $(MAKE) clean ;
@@ -20,6 +21,9 @@ clean:
 	cd shrinkconfig && $(MAKE) clean;
 	cd Classes && $(MAKE) clean ;
 	cd test && $(MAKE) clean;
+	cd analysis && $(MAKE) clean;
 	cd doxygen && rm -rf html doxygen.log
 
+test:	binaries
+	cd test && $(MAKE) test
 

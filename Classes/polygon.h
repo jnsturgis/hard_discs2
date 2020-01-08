@@ -37,6 +37,11 @@ public:
     void    expand( double scale );
 
     double  area();
+    double  max_dist();		///< Longest vertex to vertex distance (JS 8/1/20)
+    double  x_min();		///< Points on bounding rectangle (JS 8/1/20)
+    double  x_max();
+    double  y_min();
+    double  y_max();
 
     bool    is_inside( double x, double y );
     bool    is_inside( double x, double y, double radius );

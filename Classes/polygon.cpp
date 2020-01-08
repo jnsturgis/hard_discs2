@@ -85,6 +85,61 @@ polygon::area(){
     return abs(Area / 2.0);
 }
 
+double
+polygon::max_dist()			// Calculate maximum length in polygon.
+{
+    double result = 0.0;
+    double dist;
+    Point  A;
+    Point  B;
+
+    for(int i = 0; i < n_vertex; i++ ){
+        A = _vertices[i];
+        for(int j=i; j < n_vertex; j++ ){
+            B = _vertices[j];
+            dist = distance( A, B );
+            if( dist > result ) result = dist;
+        }
+    }
+    return result;
+}
+
+double
+polygon::x_min()
+{
+    double	result = _vertices[0].x;
+    for( int i=1; i<n_vertex; i++ )
+        if( _vertices[i].x < result ) result = _vertices[i].x;
+    return result;
+}
+
+double
+polygon::y_min()
+{
+    double	result = _vertices[0].y;
+    for( int i=1; i<n_vertex; i++ )
+        if( _vertices[i].y < result ) result = _vertices[i].y;
+    return result;
+}
+
+double
+polygon::x_max()
+{
+    double	result = _vertices[0].x;
+    for( int i=1; i<n_vertex; i++ )
+        if( _vertices[i].x > result ) result = _vertices[i].x;
+    return result;
+}
+
+double
+polygon::y_max()
+{
+    double	result = _vertices[0].y;
+    for( int i=1; i<n_vertex; i++ )
+        if( _vertices[i].y > result ) result = _vertices[i].y;
+    return result;
+}
+
 bool
 polygon::is_inside( double x, double y )
 {

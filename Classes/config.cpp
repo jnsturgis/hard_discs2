@@ -702,6 +702,16 @@ void    config::add_object(object* orig ){
     obj_list.add(orig);
 }
 
+/** \brief Fetch object from list by index
+ *
+ *  \param index the index of the object in the list
+ *  \return the_object
+ */
+object	*config::get_object( int index ){
+    assert( index < n_objects() );
+    return obj_list.get(index);
+}
+
 /** \brief Output a postscript snippet to draw the configuration
  *
  * \param the_forces forcefield, needed for atom sizes and colors.
@@ -791,7 +801,7 @@ config::has_clash( int i ){
 }
 
 /***
- * \brief Shake objects a bit to try and remove bad contacts
+ * @brief Shake objects a bit to try and remove bad contacts
  */
 void
 config::jiggle(){
