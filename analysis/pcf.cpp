@@ -27,10 +27,10 @@ main( int argc, char **argv )
     config      	*a_config = (config *)NULL;
     bool		verbose = false;
     char        	c;
-    char		*out_name;
+    char		*out_name = (char *)NULL;
     int			type1 = 0;
     int         	type2 = 0;
-    double		dr;
+    double		dr = 1;
     double		r;
     int 		maxbin = 0;
     int 		newmax;
@@ -63,7 +63,7 @@ main( int argc, char **argv )
                 break;
             case 'h':
                 usage();
-                return 0;
+                exit(EXIT_SUCCESS);
             case '?':				// Something wrong.
                 if (optopt == 'o'){
                     std::cerr << "The -" << optopt << " option is missing a parameter!\n";
@@ -75,7 +75,12 @@ main( int argc, char **argv )
                 exit(EXIT_FAILURE);
         }
     }
-
+    if( verbose ){
+         std::cerr << "Verbose flag is set.\n";
+         std::cerr << "Step size is " << dr << ".\n";
+         std::cerr << "First object type is  " << type1 << ".\n";
+         std::cerr << "Second object type is " << type2 << ".\n";
+    }
 // Read in the first configuration
 
     try{
@@ -103,6 +108,8 @@ main( int argc, char **argv )
 
     // Start while loop over input files...
     do {
+        if(verbose)
+            std::cerr << "Starting treatment of first configuration\n";
         /// Adjust vector sizes if necessary.
         if( a_config->is_rectangle){
             rmax = sqrt( a_config->x_size * a_config->x_size + a_config->y_size * a_config->y_size );
@@ -110,7 +117,7 @@ main( int argc, char **argv )
         } else {
             rmax = a_config->poly->max_dist();
         }
-        newmax = floor( rmax/dr );
+        newmax = 1 + floor( rmax/dr );
         if( newmax > maxbin ){
             count.resize(newmax);
             area.resize(newmax);
@@ -121,16 +128,24 @@ main( int argc, char **argv )
             }
             maxbin = newmax;
         }
+
+        if(verbose)
+            std::cerr << "Array sizes adjusted\n";
+
         if( a_config->is_periodic ){ 		// Fill in d_area array as same for all objects
 	    for( int i=0; i< maxbin; i++ ){
-                int theta1 = 0.0;
-                int theta2 = M_PI/2.0;
+                double theta1 = 0.0;
+                double theta2 = M_PI/2.0;
                 if( i * dr > a_config->x_size / 2.0 ) theta1 = acos( a_config->x_size / (2.0 * i * dr ));
                 if( i * dr > a_config->y_size / 2.0 ) theta2 = M_PI/2.0 - acos( a_config->y_size / (2.0 * i * dr ));
                 d_area[i] = dr * (2*i+1) * (theta2 - theta1) * 2.0;
                 d_area[i] /= a_config->area();
+std::cerr << i << " " << d_area[i] << " "<< theta1 << " "<< theta2 << "\n";
             }
         }
+
+        if(verbose)
+            std::cerr << "Starting loop over objects\n";
 
         n_type2 = 0;
         for(int i=0; i< a_config->n_objects(); i++ )
@@ -170,6 +185,10 @@ main( int argc, char **argv )
             }
         }
         /// Read in the next configuration if any
+
+        if(verbose)
+            std::cerr << "Look for another file\n";
+
         delete a_config;
         a_config = (config *)NULL;
         try{
@@ -192,6 +211,10 @@ main( int argc, char **argv )
     } while (a_config != (config *)NULL );
 
     // Output the datafile to out_file or std::cout
+
+    if(verbose)
+        std::cerr << "Output results\n";
+
     FILE *dest = stdout;
     if(out_name != NULL){			// Open output stream if necessary
         dest = fopen(out_name, "w" );
@@ -205,7 +228,7 @@ main( int argc, char **argv )
     //Should check area array is non-zero... truncate might be necessary
     //Write out r g(r) n(r) A(r)
     for(int i=0; i<maxbin; i++){
-        fprintf(dest,"%f\t%g\t%d\%g\n", (i+0.5)*dr, count[i]/area[i], count[i] , area[i] );
+        fprintf(dest,"%f\t%g\t%d\t%g\n", (i+0.5)*dr, count[i]/area[i], count[i] , area[i] );
     }
 
     if( dest != stdout ) fclose( dest );
