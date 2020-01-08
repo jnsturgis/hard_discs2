@@ -140,7 +140,6 @@ main( int argc, char **argv )
                 if( i * dr > a_config->y_size / 2.0 ) theta2 = M_PI/2.0 - acos( a_config->y_size / (2.0 * i * dr ));
                 d_area[i] = dr * (2*i+1) * (theta2 - theta1) * 2.0;
                 d_area[i] /= a_config->area();
-std::cerr << i << " " << d_area[i] << " "<< theta1 << " "<< theta2 << "\n";
             }
         }
 
