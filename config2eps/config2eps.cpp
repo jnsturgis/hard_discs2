@@ -219,6 +219,7 @@ int main(int argc, char** argv) {
     // Get the configuration
     
     config      *current_state = new config(std::cin);
+    current_state->write( stdout );
     
     if( read_topology ){
         a_topology = new topology(topo_name.c_str());
@@ -227,7 +228,6 @@ int main(int argc, char** argv) {
     }
 
     current_state->add_topology(a_topology);    // Associate topology with the configuration,
-    a_topology = (topology *)NULL;		// and invalidate pointer.
     if( verbose ){
         std::cerr << "Set up topology:\n";
         a_topology->write( stderr );

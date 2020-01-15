@@ -28,12 +28,8 @@ before the nobject line is a polygon definition if the form
  * n_vertices
  * x_coord, y_coord...
 
-
-## Enhancements to implement
-
-Allow comments in the file: # or % to end of line ?
-Allow blank lines in the file.
-// Implement V2 (maintain backward compatibility) with polygonal areas not rectangle 0,0,x_size,y_size. 
-// This relates to issue #1 and is necessary for analysis of AFM image patches.
+### Comments can be included in the file.
+All contents after a # in a line are ignored.
+Blank lines (containing only whitespace) are ignored.
 
 

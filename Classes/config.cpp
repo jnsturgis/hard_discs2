@@ -57,7 +57,6 @@ config::config() {
  *              way. If there is an error this should be apparent even if the
  *              structure is still valid.
  * @todo        Read from file if periodic conditions or not.
- * @todo        Enrich file to handle non-rectangular areas (being integrated)
  * @todo        Integrate an object constructor from a file saves 4 variables
  *              and a couple of lines of code.
  */
@@ -72,6 +71,28 @@ config::config(string in_file) {
     ff.close();
 }
 
+bool
+my_getline(std::istream& ff, string *line){
+    while(getline(ff, *line)){		        // Read a new line
+        if(line->find('#')<line->npos)		// Remove comments
+            line->erase(line->find('#'));
+        while(line->size() && isspace(line->front())) 
+            line->erase(line->begin());
+        while(line->size() && isspace(line->back())) 
+            line->pop_back();
+        if( !line->empty() ) return true;
+    }
+    return false;
+}
+
+/*
+ * Read a configuration file as a stream. 
+ * Want to enhance this to:
+ * 1. Deal sensibly with errors in the input file
+ *    In case of errors it throws runtime_error() with a useful message!
+ * 2. Ignore empty lines, and comments "# to end of line"
+ *    These are removed by my_getline(ff, line)
+ */
 void
 config::config_read(std::istream& ff){
     int         n_obj;
@@ -91,86 +112,79 @@ config::config_read(std::istream& ff){
         throw runtime_error("Could not open configuration file\n");
     }
     
-    // We get each line with getline(in_file, line)
-    // Here we want stuff from the first two lines so
-    // Get the line
-    getline(ff, line);
+    // We get each line with my_getline(in_file, line)
+    // This fills string with the content of the next line that is not all
+    // whitespace or comment and returns true if it succeeded and false on failure.
+
+    if(!my_getline(ff, &line)){			// Found end of file before content.
+        throw runtime_error("Found no content in the configuration file\n");
+    }
+    std::cerr << line << "\n";
     istringstream iss(line);
-    
-    // From this, populate other variables - x_size and y_size are doubles
-    // Can also check if the line has the right number of fields
     if (!(iss >> x_size >> y_size)) {
-        throw range_error("First line of the configuration file should be x_size y_size, exiting ...\n");
-    }    
-    // Clear iss
+        throw runtime_error("First line of the configuration file should be x_size y_size, exiting ...\n");
+    }
     iss.clear();
-   
-    ///////////////////////////////////
-    // Here we handle the case of a non-rectangular configuration
+
+    // Here we handle the case of a non-rectangular configuration signalled
+    // by 2 zeros in the first line (after any comments etc)... 
     if( x_size == 0.0 ){
         is_rectangle = false;
         is_periodic = false;
 
-        getline(ff, line);
+        if(! my_getline(ff, &line))
+            throw runtime_error("Failed to read number of vertices..\n");
         iss.str(line);
         if( !(iss >> n_vertex )){
-            throw range_error("Failed to read number of vertices, exiting ...\n");
+            throw runtime_error("Failed to read number of vertices...\n");
         }
         iss.clear();
         poly = new polygon( n_vertex );
 
         double x_coord, y_coord;
         for( int i = 0; i < n_vertex; i++){
-            getline(ff, line);		// Should check read OK
+            if(!my_getline(ff, &line))
+        	throw runtime_error("Error reading bounding polygon coordinates..\n");
             iss.str(line);
             if( !(iss >> x_coord >> y_coord )){
-        	throw range_error("Error reading bounding polygon coordinates, exiting ...\n");
+        	throw runtime_error("Error reading bounding polygon coordinates...\n");
             }
             poly->add_vertex( x_coord, y_coord );
             iss.clear();
         }
     }
-    ///////////////////////////////////
  
     // Next line the number of objects in the configuration
-    getline(ff, line);
+    if( !my_getline(ff, &line))
+        throw range_error("Failed to read number of objects..\n");
+    std::cerr << line << "\n";
     iss.str(line);
-    if (!(iss >> n_obj)) {
-        throw range_error("Failed to read number of objects, exiting ...\n");
-    }
-    
-    // Clear iss again
+    if (!(iss >> n_obj))
+        throw range_error("Failed to read number of objects...\n");
     iss.clear();
     
-    // Now loop through the remaining lines
-    while (getline(ff, line)) {
-        
-        // The line
+    // Now loop through the objects and remaining lines
+    for( int i = 0; i < n_obj; i++){
+        if( !my_getline(ff, &line))
+            throw runtime_error("Problem in the coordinates..\n");
+        std::cerr << line << "\n";
         iss.str(line);
+        if (!(iss >> o_type >> x_pos >> y_pos >> angle))
+            throw runtime_error("Problem in the coordinates...\n");
         
-        // Bead type, x, y and angle at each line
-        if (!(iss >> o_type >> x_pos >> y_pos >> angle)) {
-            throw range_error("Problem in the coordinates, exiting ...\n");
-        }
-        
-        // Populate a new object and add it to the list
         my_obj = new object(o_type, x_pos, y_pos, angle );
         obj_list.add(my_obj); 
-        
-        // Clear iss
         iss.clear();
     }
-    
-    unchanged = false;                              // Set up so will calculate energy.
-    saved_energy = 0.0;
-    the_topology = (topology *)NULL;                // Topologies are not included in
-                                                    // the file.
+    cerr << "Done\n";
+    if( my_getline(ff, &line )){			// Should be at end of file
+        throw runtime_error("Configuration ends before file.\n");
+    }
 
-    assert(n_obj == n_objects() );                  // Should check the configuration
-                                                    // is alright.
-    // Include some extra tests.
-    // Non 0 area for configuration
-    // All objects are inside the configuration
+    unchanged = false;                          // Set up so will calculate energy.
+    saved_energy = 0.0;
+    the_topology = (topology *)NULL;            // Topologies are not included
+    assert(n_obj == n_objects() );              // Include some extra tests.
 }
 
 /**
