@@ -1,10 +1,4 @@
 
-all:	binaries documentation
-
-documentation:
-	cd doxygen && doxygen doxyfile;
-	cd doxygen/latex && $(MAKE) $(MFLAGS);
-
 binaries: 
 	cd Classes && $(MAKE) $(MFLAGS);
 	cd NVT && $(MAKE) $(MFLAGS);
@@ -13,6 +7,12 @@ binaries:
 	cd shrinkconfig && $(MAKE) $(MFLAGS);
 	cd test && $(MAKE) $(MFLAGS);
 	cd analysis && $(MAKE) $(MFLAGS)
+
+all:	binaries documentation
+
+documentation:
+	cd doxygen && doxygen doxyfile;
+	cd doxygen/latex && $(MAKE) $(MFLAGS);
 
 clean:
 	cd NVT && $(MAKE) clean ;
