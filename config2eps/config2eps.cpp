@@ -226,11 +226,12 @@ int main(int argc, char** argv) {
         a_topology = new topology(1.0);		// Default topology 1 unit circle
     }
 
-    current_state->add_topology(a_topology);    // Assocuate topology with the configuration.
+    current_state->add_topology(a_topology);    // Associate topology with the configuration,
+    a_topology = (topology *)NULL;		// and invalidate pointer.
     if( verbose ){
-        std::cerr << "Set up topology:";
+        std::cerr << "Set up topology:\n";
         a_topology->write( stderr );
-        std::cerr << "================";
+        std::cerr << "================\n";
     }
 
 
@@ -243,8 +244,10 @@ int main(int argc, char** argv) {
     current_state->ps_atoms( std::cout );	// Ideally should be aware of verbose and read_topology
     std::cout << ending;
 
-    delete current_state;
-    delete a_topology;
+    if(verbose) std::cerr << "================\n";
+    if(verbose) std::cerr << "Cleaning up\n";
+    delete current_state;			// This also deletes the topology
+    if(verbose) std::cerr << "Cleaned up\n";
 
-    return 0;
+    return EXIT_SUCCESS;
 }

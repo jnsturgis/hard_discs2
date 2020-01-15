@@ -280,6 +280,7 @@ main( int argc, char **argv )
     //Write out r g(r) n(r) A(r)
 
     for(int i=0; i<maxbin; i++){
+        if( count[i] == 0 && area[i] == 0.0 ) break;
         fprintf(dest,"%f\t%g\t%d\t%g\n", (i+0.5)*dr, count[i]/area[i], count[i] , area[i] );
     }
 
