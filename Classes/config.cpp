@@ -119,7 +119,6 @@ config::config_read(std::istream& ff){
     if(!my_getline(ff, &line)){			// Found end of file before content.
         throw runtime_error("Found no content in the configuration file\n");
     }
-    std::cerr << line << "\n";
     istringstream iss(line);
     if (!(iss >> x_size >> y_size)) {
         throw runtime_error("First line of the configuration file should be x_size y_size, exiting ...\n");
@@ -157,7 +156,6 @@ config::config_read(std::istream& ff){
     // Next line the number of objects in the configuration
     if( !my_getline(ff, &line))
         throw range_error("Failed to read number of objects..\n");
-    std::cerr << line << "\n";
     iss.str(line);
     if (!(iss >> n_obj))
         throw range_error("Failed to read number of objects...\n");
@@ -167,7 +165,6 @@ config::config_read(std::istream& ff){
     for( int i = 0; i < n_obj; i++){
         if( !my_getline(ff, &line))
             throw runtime_error("Problem in the coordinates..\n");
-        std::cerr << line << "\n";
         iss.str(line);
         if (!(iss >> o_type >> x_pos >> y_pos >> angle))
             throw runtime_error("Problem in the coordinates...\n");
@@ -176,7 +173,6 @@ config::config_read(std::istream& ff){
         obj_list.add(my_obj); 
         iss.clear();
     }
-    cerr << "Done\n";
     if( my_getline(ff, &line )){			// Should be at end of file
         throw runtime_error("Configuration ends before file.\n");
     }
@@ -748,16 +744,13 @@ config::ps_atoms( std::ostream& dest ){
     int     t, lr, tb;
     char    *my_color;
     int     max_o_type, o_type;
-
     
     if ( !the_topology ){
-         std::cerr << "Generating postscript images from a configuration "
-            "requires setting a topology.";
-         exit(1);
+        throw runtime_error(
+        "Generating postscript images from a configuration requires setting a topology.");
     }
 
     max_o_type = the_topology->n_atom_types -1 ;
-
                                             // Loop over the objects.
     for(int i = 0; i < obj_list.size(); i++){
         my_obj = obj_list.get(i);
