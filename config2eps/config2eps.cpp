@@ -237,11 +237,11 @@ int main(int argc, char** argv) {
 
     scale = 8.0/max(current_state->x_size,current_state->y_size);
 
-    // Write in it
+    // Write the postscript
     std::cout << prolog;
     std::cout << preamble;
     std::cout << scale << " dup scale " << 0.5/scale << " UL\n";
-    current_state->ps_atoms( std::cout );	// Ideally should be aware of verbose and read_topology
+    current_state->ps_atoms( std::cout );	// Write the different objects out
     std::cout << ending;
 
     if(verbose) std::cerr << "================\n";

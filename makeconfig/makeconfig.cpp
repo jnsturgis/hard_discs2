@@ -147,7 +147,7 @@ main(int argc, char **argv)
     if( verbose ){
         std::cerr << "Set up topology:";
         a_topology->write( stderr );
-        std::cerr << "================";
+        std::cerr << "================\n";
     }
 
     // Start adding things to the empty configuration
@@ -159,6 +159,9 @@ main(int argc, char **argv)
     
     for( int i = 0; i < (argc - optind); i++) {
         n = std::atof( argv[ optind+i ] );
+        if(verbose){
+            std::cerr << "Adding " << n << " objects of type " << i << ".\n";
+        }
         if( topo_name == NULL && i > 0){	// Need to add another simple molecule to the topology
             a_topology->add_molecule(1.0);
         }
@@ -189,7 +192,9 @@ main(int argc, char **argv)
             }
         }
     }
-
+    if(verbose){
+        std::cerr << "Finished placing objects.\n";
+    }
     a_config->expand( scale );			// Rescale configuration after placement.
 
     FILE *dest = stdout;

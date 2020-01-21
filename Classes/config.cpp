@@ -446,9 +446,9 @@ config::test_clash( object *obj1, object *obj2 ){
 
         for( int k = 0; k < the_topology->molecules(o_type1).n_atoms; k++ ){
                                         // Get atom information
-            t1  =  the_topology->molecules(o_type1).the_atoms(j).type;
-            dx1 =  the_topology->molecules(o_type1).the_atoms(j).x_pos;
-            dy1 =  the_topology->molecules(o_type1).the_atoms(j).y_pos;
+            t1  =  the_topology->molecules(o_type1).the_atoms(k).type;
+            dx1 =  the_topology->molecules(o_type1).the_atoms(k).x_pos;
+            dy1 =  the_topology->molecules(o_type1).the_atoms(k).y_pos;
             r1  =  the_topology->atom_sizes(t1);  // Get radius
                                         // Calculate atom position
             x1  =  obj1->pos_x + dx1 * cos(theta1) - dy1 * sin(theta1);
@@ -505,6 +505,7 @@ config::test_clash( object *new_object ){
     int o_type1 = simple_min( new_object->o_type, max_o_type );
     double theta1 = new_object->orientation;
     double t1, dx1, dy1, r1, x1, y1;
+    object *obj1;
 
     if( !is_periodic ){                     // Check clash with walls.
         for(int i = 0; i < the_topology->molecules(o_type1).n_atoms; i++ ){
@@ -525,8 +526,9 @@ config::test_clash( object *new_object ){
         }
     }
                                             // Loop over the objects.
-    for(int i = 0; i < obj_list.size(); i++){
-        if(test_clash( obj_list.get(i),new_object)) return true;
+    for(int i = 0; i < n_objects(); i++){
+        obj1 = obj_list.get(i);
+        if(test_clash( obj1 ,new_object)) return true;
     }
     return false;
 }
