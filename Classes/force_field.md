@@ -15,7 +15,8 @@ The force field file is structured as follows:
 
 Colors are taken from the ist of defined colors which is currently: red, green, blue, orange...
 
-Comments?
+## Comments
+Blank lines are ignored and lines with a # as the first printing character are considered comments.
 
 Continuation lines?
 

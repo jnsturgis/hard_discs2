@@ -31,6 +31,14 @@
 *.out
 *.app
 
+# External sources
+
+Libraries/gzstream
+
+#Bug reports
+
+Bug_reports/
+
 # Executables for this project
 
 NVT/NVT

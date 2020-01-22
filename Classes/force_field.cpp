@@ -88,7 +88,7 @@ force_field::is_comment( char *line ){
 //  Comments are lines of whitespace or lines
 //  That start (possibly after whitespace) with
 //  COMMENTCHAR...
-    int i;
+    int i=0;
     while( line[i] != '\0' ){
         if( isspace( line[i] )) i++;
         else
@@ -128,19 +128,20 @@ force_field::read_force_field( FILE *source ){
                     energy.resize(type_max, type_max);
                     logical_line++;                     // Move on
                     break;
-            case 1: for( i = 0; i < type_max; i++ ){
+            case 1: for( i = 0; i < type_max; i++ ){     // sizes
                         sscanf( line, "%lf", &number );
                         radius[i] = number;
                     }
                     logical_line++;
                     break;
-            case 2: for( i = 0; i < type_max; i++ ){
+            case 2: for( i = 0; i < type_max; i++ ){    // colors
                         sscanf( line, "%s", (char *)(&data) );
                         color(i) = data;
                     }
                     logical_line++;
                     break;
-            case 3: sscanf( line, "%lf %lf", &cut_off, & length );	// interaction cutoff distance and length scale.
+            case 3: 	                                // interaction cutoff distance and length scale.
+                    sscanf( line, "%lf %lf", &cut_off, & length );
                     logical_line++;
                     break;
             case 4: for( i = 0; i < type_max; i++ ){    // Read in energy matrix
@@ -155,6 +156,7 @@ force_field::read_force_field( FILE *source ){
            }
         }
     }
+    free( line );					// Free line that is implicitly allocated.
 }
 
 force_field::~force_field() {                           // Probably need to get rid of arrays.

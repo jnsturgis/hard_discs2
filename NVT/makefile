@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -Wall
-LIB_FLAGS = 
+LIB_FLAGS = -L../Libraries/ -lboost_program_options -lgzstream -lz 
 EXEC_NAME = NVT
 SRC = $(wildcard *.cpp ../Classes/*.cpp)
 OBJ = $(SRC:.cpp=.o)
@@ -8,7 +8,7 @@ OBJ = $(SRC:.cpp=.o)
 all : $(EXEC_NAME)
 
 NVT : $(OBJ)
-	$(CC) -g -o $@ $^ -lboost_program_options
+	$(CC) -g -o $@ $^ $(LIBFLAGS)
 
 %.o: %.cpp
 	$(CC) -o $@ -c $< $(CFLAGS)
