@@ -64,32 +64,10 @@ object::~object() {
  * keep it in the boundary using either periodic conditions or reflective walls.
  */
 void
-object::move(double max_dist, double x_size, double y_size, bool periodic){
-    double  dist, angle;
-    double  dx, dy;
-
-    assert(max_dist < simple_min(x_size,y_size));
-
-    /* Calculate shift distance */
-    dist = rnd_lin(1.0);
-    if (dist == 0.0) dist=DBL_MIN;
-    dist = -2.0*log(dist);
-    dist *= max_dist;
-
-    /* Use angle to calculate coordinate shift */
-    angle = rnd_lin(1.0);
-    dy = dist * cos(M_2PI*angle);
-    dx = dist * sin(M_2PI*angle);
-
+object::move(double dx, double dy){
     /* Handle the edges to keep the object in the box */
     pos_x += dx;
     pos_y += dy;
-    if(periodic){
-        while( pos_x < 0 )      pos_x += x_size;
-        while( pos_x > x_size ) pos_x -= x_size;
-        while( pos_y < 0 )      pos_y += y_size;
-        while( pos_y > y_size ) pos_y -= y_size;
-    }
 
     recalculate = true;
 }
@@ -98,9 +76,7 @@ object::move(double max_dist, double x_size, double y_size, bool periodic){
  * Rotate a random object a random amount.
  * @param max_angle
  */
-void    object::rotate(double max_angle){
-    double  angle;
-    angle = rnd_lin(2*max_angle)-max_angle;
+void    object::rotate(double angle){
     orientation += angle;
     recalculate = true;
     while( orientation < 0.0  ) orientation += M_2PI;

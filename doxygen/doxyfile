@@ -790,7 +790,19 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = /home/james/src/2D_Monte_Carlo/v0_cc
+INPUT                  = \
+                ../README.md             \
+                ../Classes/config.md     \
+                ../Classes/topology.md   \
+                ../Classes/force_field.md \
+                ../makeconfig            \
+                ../shrinkconfig          \
+                ../config2eps            \
+                ../NVT                   \
+                ../analysis              \
+                ../test                  \
+                ../Classes               \
+                ../Libraries             
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

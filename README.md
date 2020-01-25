@@ -1,7 +1,6 @@
 # General descirption of program suite {#general}
-\brief General descirption of program suite
 
-The suite of programmes desribed here are designed to provide a simple system
+The **2D_Monte_Carlo** suite of programmes desribed here are designed to provide a simple system
 for investigating very coarse grained models of membrane proteins. The programmes
 operate with several different types of file that describe the system being modelled.
 
@@ -12,15 +11,16 @@ and doing different forms of integraton.
 
 ## The programmes and utilities
 
-The programmes:
-* [NVT](@ref NVT) - perform a NVT monte-carlo integration in the NVT ensemble.
 * [makeconfig](@ref makeconfig) - create a new configuration file.
-* [config2eps](@ref config2eps) - create a postscript file from a configuration file.
-Planned programmes (versions exist need to be added and updated):
-* [pcf](@ref pcf) - calculate pair correlation functions from a configuration.
-* [Gibbs](@ref Gibbs) - perform a monte-carlo integration in the Gibbs ensemble.
 * [shrinkconfig](@ref shrinkconfig) - change the size of a configuration (with agitation if necessary).
+* [config2eps](@ref config2eps) - create a postscript file from a configuration file.
+
+* [pcf](@ref pcf) - calculate pair correlation functions from a configuration.
 * [local_order](@ref local_order) - analyse the local environment of the objects
+
+* [NVT](@ref NVT) - perform a NVT monte-carlo integration in the NVT ensemble.
+* [Gibbs](@ref Gibbs) - perform a monte-carlo integration in the Gibbs ensemble.
+
 <!--
 Others that exist and might be fun...
 * [delaunay] - do a delaunay tesselation and calculate a voronoi diagramme
@@ -57,8 +57,10 @@ described [here](@ref force_field_file).
 ## Compilation, installation and testing
 
 * Currently the implementation needs parts of the BOOST library
-* Running 'make' in the root directory should compile everything including 
+* Running 'make all' in the root directory should compile everything including 
   the documentation.
+* Running 'make test' will perform various tests to make sure the programmes 
+appear to be running as expected.
 
 ## Tutorial
 

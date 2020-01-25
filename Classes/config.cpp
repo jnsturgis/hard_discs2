@@ -657,8 +657,117 @@ bool config::expand(double dl, int max_try ){
  * @param dl_max the scaling parameter.
  */
 void config::move(int obj_number, double dl_max){
-    obj_list.get(obj_number)->move(dl_max, x_size, y_size, is_periodic ); // TODO: Need to fix this for non-rectangles
-    obj_list.get(obj_number)->rotate(M_2PI);// Mix for the moment move and rotate
+    double  dist, angle;
+    double  dx, dy;
+
+    /* Calculate shift distance */
+    dist = rnd_lin(1.0);
+    if (dist == 0.0) dist=DBL_MIN;
+    dist = -2.0*log(dist);
+    dist *= dl_max;
+
+    /* Use angle to calculate coordinate shift */
+    angle = rnd_lin(1.0);
+    dy = dist * cos(M_2PI*angle);
+    dx = dist * sin(M_2PI*angle);
+
+    obj_list.get(obj_number)->move(dx, dy); 
+
+    angle = rnd_lin(2*M_2PI)-M_2PI;
+    obj_list.get(obj_number)->rotate(angle);
+
+    // Fix boundary conditions periodic or not.
+    fix_inbox( obj_number );
+}
+
+/**
+ * Translate the configuration coordinate system by dx, dy
+ *
+ * @param dx horizontal translation distance
+ * @param dy vertical translation distance
+ */
+void
+config::translate( double dx, double dy ){
+    if( is_rectangle )
+        rect_2_poly();
+    poly->translate(dx,dy);
+
+}
+
+/**
+ * Convert the bounding box into a polygon.
+ *
+ * @return true if it was possible, false otherwise.
+ */
+bool
+config::rect_2_poly(){
+    if( is_rectangle ){
+        // Convert rectangle to poly.
+        poly = new polygon( 4 );
+        poly->add_vertex(   0.00,   0.00 );
+        poly->add_vertex( x_size,   0.00 );
+        poly->add_vertex( x_size, y_size );
+        poly->add_vertex(   0.00, y_size );
+        is_rectangle = false;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Convert a rectangular polygon bounding box to a rectangle.
+ *
+ * @return true if all went well, false if not either because not rectangular or nop.
+ */
+bool
+config::poly_2_rect(){
+    if( is_rectangle ) return false;
+    if( !poly->is_parallelogram() ) return false;
+    poly->order_vertices();
+    translate(-(poly->get_vertex(0).x), -(poly->get_vertex(0).y));
+    if( poly->get_vertex(1).y != 0.00 ){
+        rotate( - atan2( poly->get_vertex(1).y, poly->get_vertex(1).x) );
+    }
+    // Now should be oriented (? good to test).
+    is_rectangle = true;
+    x_size = poly->get_vertex(1).x;
+    y_size = poly->get_vertex(3).y;
+    delete( poly );
+    return true;
+}
+
+/**
+ * Ensure that the object is inside the boundary. If using periodic conditions
+ * use these to fix it. If not periodic conditions move onto boundary?
+ *
+ * @param obj_number the index of the object to work on.
+ */
+void config::fix_inbox( int obj_number ){
+
+    double pos_x = obj_list.get(obj_number)->pos_x;
+    double pos_y = obj_list.get(obj_number)->pos_y;
+
+    if( is_periodic ){
+        while( pos_x < 0 )      pos_x += x_size;
+        while( pos_x > x_size ) pos_x -= x_size;
+        while( pos_y < 0 )      pos_y += y_size;
+        while( pos_y > y_size ) pos_y -= y_size;
+    } else {
+        if( is_rectangle ){
+            while( pos_x < 0 )      pos_x += x_size/2.0;
+            while( pos_x > x_size ) pos_x -= x_size/2.0;
+            while( pos_y < 0 )      pos_y += y_size/2.0;
+            while( pos_y > y_size ) pos_y -= y_size/2.0;
+	} else {
+            while(! poly->is_inside(pos_x, pos_y)){
+                pos_x -= (pos_x - poly->center_x())/2.0;
+                pos_y -= (pos_y - poly->center_y())/2.0;
+            }
+	}
+    }
+
+    obj_list.get(obj_number)->pos_x = pos_x;
+    obj_list.get(obj_number)->pos_y = pos_y;
 }
 
 /**
@@ -669,7 +778,23 @@ void config::move(int obj_number, double dl_max){
  * @param theta_max The scaling parameter.
  */
 void config::rotate(int obj_number, double theta_max){
-    obj_list.get(obj_number)->rotate(theta_max);
+    double angle = rnd_lin(theta_max)-theta_max/2.0;
+    obj_list.get(obj_number)->rotate(angle);
+}
+
+/**
+ * Rotate the configuration (bounding polygon and objects) clockwise by angle
+ *
+ * @param angle the number of radians to rotate
+ */
+void
+config::rotate( double angle ){
+    if( is_rectangle ) rect_2_poly();
+    poly->rotate( angle );
+    for(int i=0; i< n_objects(); i++){
+        /// calculate new xy coordinates TODO
+        obj_list.get(i)->rotate( -angle );
+    }    
 }
 
 /**
@@ -702,6 +827,28 @@ void    config::add_topology(topology* a_topology){
     if( the_topology )                      // If there is already one
         delete( the_topology );             // Get rid of it
     the_topology = a_topology;              // Make the new association
+}
+
+/**
+ * \brief Return the width of a configuration (independant of boundary).
+ *
+ * \return the calculated width.
+ */
+double
+config::width(){
+   if( is_rectangle ) return x_size;
+   else return (poly->x_max() - poly->x_min());
+}
+
+/**
+ * \brief Return the height of a configuration (independant of boundary).
+ *
+ * \return the calculated height.
+ */
+double
+config::height(){
+   if( is_rectangle ) return y_size;
+   else return (poly->y_max() - poly->y_min());
 }
 
 /** \brief Insert an object into the configuration.
@@ -814,18 +961,25 @@ config::has_clash( int i ){
  */
 void
 config::jiggle(){
+    double  dist, angle;
+    double  dx, dy;
+
     for( int i=0; i < obj_list.size(); i++){
-        if( has_clash( i )) jiggle( obj_list.get(i) );
+        if( has_clash( i )){
+            /* Calculate shift distance */
+            dist = rnd_lin(1.0);
+            if (dist == 0.0) dist=DBL_MIN;
+            dist = -2.0*log(dist);
+            /* Use angle to calculate coordinate shift */
+            angle = rnd_lin(1.0);
+            dy = dist * cos(M_2PI*angle);
+            dx = dist * sin(M_2PI*angle);
+
+            obj_list.get(i)->move(dx,dy);
+            fix_inbox( i );
+            angle = rnd_lin(M_2PI)-M_PI;
+            obj_list.get(i)->rotate(angle);
+        }
     }
 }
 
-/***
- * @brief Shake an object a little
- *
- * @param my_obj the object to jiggle
- */
-void
-config::jiggle(object *my_obj){
-   my_obj->move(1.0, x_size, y_size, is_periodic);		// TODO: Need to check works for non-rectangles
-   my_obj->rotate(M_PI);
-}

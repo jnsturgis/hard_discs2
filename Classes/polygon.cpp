@@ -140,6 +140,24 @@ polygon::y_max()
     return result;
 }
 
+double
+polygon::center_x()
+{
+    double result = _vertices[0].x;
+    for( int i=1; i<n_vertex; i++ )
+        result += _vertices[i].x;
+    return result/n_vertex;
+}
+
+double
+polygon::center_y()
+{
+    double result = _vertices[0].y;
+    for( int i=1; i<n_vertex; i++ )
+        result += _vertices[i].y;
+    return result/n_vertex;
+}
+
 bool
 polygon::is_inside( double x, double y )
 {
@@ -222,4 +240,91 @@ polygon::write( std::ostream& dest ){
     }
     return EXIT_SUCCESS;
 }
+
+int
+polygon::winding(){			/// Return +ve if CW winding -ve cor CCW
+    double sum = (_vertices[0].x - _vertices[n_vertex-1].x)*(_vertices[0].y - _vertices[n_vertex-1].y);
+    for( int i=1; i < n_vertex; i++ ){
+        sum += (_vertices[i].x - _vertices[i-1].x)*(_vertices[i].y - _vertices[i-1].y);
+    }
+    return ((sum>0.0)?+1:-1);
+}
+
+void
+polygon::order_vertices(){
+
+    int    index = 0;
+    int	   i;
+    double min_y = _vertices[0].y;
+    double x_val = _vertices[0].x;
+
+    for( i=1; i < n_vertex; i++ ){
+        if(( _vertices[i].y < min_y ) || (( _vertices[i].y == min_y ) && ( _vertices[i].x < x_val ))) {
+            index = i;
+            min_y = _vertices[i].y;
+            x_val = _vertices[i].x;
+        }
+    }
+    while( index != 0){
+        Point save = _vertices[0];
+        for( i=1; i < n_vertex; i++ ){
+            _vertices[i-1] = _vertices[i];
+        }
+        _vertices[i-1] = save;
+        index--;
+    }
+    if( winding() < 0.0 ){	/// Reverse order
+       int j = 1;
+       int k = n_vertex - j;
+       while( j < k ){
+           Point      p = _vertices[j];
+           _vertices[j] = _vertices[k];
+           _vertices[k] = p;
+           j++;
+           k--;
+       }
+    }
+
+    assert( winding() > 0.0 );
+    assert( _vertices[0].y == y_min() );
+    assert( _vertices[1].y >  y_min() );
+
+}
+
+void
+polygon::translate( double dx, double dy ){
+    for(int i=0; i < n_vertex; i++ ){
+        _vertices[i].x += dx;
+        _vertices[i].y += dy;
+    }
+}
+
+void
+polygon::rotate( double angle ){	/// Do a clockwise rotation of angle.
+    double c = cos(-angle);
+    double s = sin(-angle);
+
+    for(int i=0; i < n_vertex; i++ ){ /// Rotate all points
+        double x_new = _vertices[i].x * c - _vertices[i].y * s;
+        double y_new = _vertices[i].x * s + _vertices[i].y * c;
+        _vertices[i].x = x_new;
+        _vertices[i].y = y_new;
+    }
+}
+
+const Point
+polygon::get_vertex( int i ){
+    return _vertices[i];
+}
+
+bool
+polygon::is_parallelogram(){
+    if( n_vertex != 4 ) return false;
+    if( (_vertices[1].x - _vertices[0].x) != (_vertices[3].x - _vertices[2].x)) return false;
+    if( (_vertices[1].y - _vertices[0].y) != (_vertices[3].y - _vertices[2].y)) return false;
+    if( (_vertices[2].x - _vertices[1].x) != (_vertices[3].x - _vertices[0].x)) return false;
+    if( (_vertices[2].y - _vertices[1].y) != (_vertices[3].y - _vertices[0].y)) return false;
+    return true;
+}
+
 

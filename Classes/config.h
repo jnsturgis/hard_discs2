@@ -102,8 +102,10 @@ public:
                                  ); ///< Attach a topology to the configuration
     void        add_object(object *orig
                                  ); ///< Insert an object in the configuration
-    double      x_size;             ///< The width of the configuration
-    double      y_size;             ///< The height of the configuration
+    double      x_size;             ///< The width of rectangular configuration
+    double      y_size;             ///< The height of rectangular configuration
+    double	width();            ///< The width of any configuration
+    double	height();           ///< The height of any configuration
     bool        unchanged;          ///< Is the configuration unchanged since the last evaluation of energy.
     bool        is_periodic;        ///< Use periodic boundary conditions
 
@@ -129,19 +131,22 @@ public:
                               );    ///< Expand the surface area by a factor dl allow several attempts to remove clashes.
     void    move(int obj_number, double dl_max 
                                 );  ///< Move an object in the configuration.
+    void    translate( double dx,   ///< Translate the whole reference frame dx, dy
+                      double dy );
+    void    rotate( double theta ); ///< Rotate the configuration by theta around 0,0
     void    rotate(int obj_number, double theta_max
                                  ); ///< Rotate an object in the configuration.
-
+    void    fix_inbox( int obj_number ); ///< Force object inside perimeter.
     void    invalidate_within(double distance, int index 
                                  ); ///< Mark energies for recalculation.
     object	*get_object(int index); ///< find an object in the configuration (JS 8/1/20)
-
+    bool	rect_2_poly();	    ///< Convert rectangle container to a polygon.
+    bool	poly_2_rect();	    ///< Convert rectangular polygon container to a rectangle.
 private:
     bool        test_clash( object *o1, object *o2
                                  ); ///< Check if there is a clash between 2 objects.
     bool        has_clash( int i ); ///< check if the object with index i has a clash. 
     void        jiggle();           ///< Shake objects a bit to try and remove bad contacts.
-    void        jiggle(object *o1); ///< Shake the object a bit to try and remove bad contacts.
 
     void	config_read(std::istream& src
                                  ); ///< Helper function reading from a stream.

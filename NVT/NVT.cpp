@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
     }
 
     std::ofstream log_file;
-    #define logger ((log_file.is_open())? log_file : std::cerr )
+    #define logger ((log_file.is_open())? log_file : std::cout )
     if( log_name.length() > 0 ){
        log_file.open( log_name, std::ofstream::out );
     }
@@ -206,19 +206,25 @@ int main(int argc, char** argv) {
         }
     }
     catch(...){
-        logger << "Error reading configuration aborting.\n";
+        std::cerr << "Error reading configuration aborting.\n";
         if( current_state ) delete current_state;
         exit( EXIT_FAILURE );
     }
     if( verbose ) logger << "Read configuration successfully.\n";
 
     // Load the force field from the force field file
+    if( force_name.length() == 0 ){
+        std::cerr << "Error the force field file was required but was not declared. Aborting.\n";
+        if( current_state ) delete current_state;
+        exit( EXIT_FAILURE );
+    }
+
     if( verbose ) logger << "Reading force field from " << force_name << ".\n";
     try{
         the_forces = new force_field(force_name.c_str());
     }
     catch(...){
-        logger << "Error reading force field. Aborting.\n";
+        std::cerr << "Error reading force field. Aborting.\n";
         delete current_state;
         if( the_forces ) delete the_forces;
         exit( EXIT_FAILURE );
@@ -230,6 +236,13 @@ int main(int argc, char** argv) {
         logger << "==============================\n";
     }
     // Load the topology from the topology file
+    if( topo_name.length() == 0 ){
+        std::cerr << "Error the topology file is required but was not declared. Aborting.\n";
+        delete current_state;
+        delete the_forces;
+        exit( EXIT_FAILURE );
+    }
+
     if( verbose ) logger << "Reading topology from" << topo_name << ".\n";
     try{
         a_topology = new topology(topo_name.c_str());
@@ -253,7 +266,7 @@ int main(int argc, char** argv) {
 
     if( traj_freq > 0 ){
         if( traj_name.length() == 0 ){
-            logger << "You must specify a file name for saving a trajectory (-s option)\n";
+            std::cerr << "You must specify a file name for saving a trajectory (-s option)\n";
             delete current_state;
             delete the_forces;
             delete a_topology;
@@ -262,7 +275,7 @@ int main(int argc, char** argv) {
         logger << "Snap shots saved every " << traj_freq << " steps\n";
         traj_stream.open( traj_name.c_str() );
         if( ! traj_stream.good() ){
-            logger << "Error while opening file " << traj_name << " for the trajectory.\n";
+            std::cerr << "Error while opening file " << traj_name << " for the trajectory.\n";
             delete current_state;
             delete the_forces;
             delete a_topology;
@@ -277,17 +290,30 @@ int main(int argc, char** argv) {
 
     // Add the topology to the configuration.
     current_state->add_topology(a_topology);
-    current_state->is_periodic = periodic;
+
+    if( current_state->is_rectangle ){
+        current_state->is_periodic = periodic;
+    } else if( periodic ){					/// TODO convert parallelogram to rectangle
+        if( current_state->poly->is_parallelogram() ){
+            if( current_state->poly_2_rect() ){
+                current_state->is_periodic = periodic;
+            }
+        }
+        if( ! current_state->is_rectangle ){
+            std::cerr << "Periodic conditions for non-rectangular configurations not supported - ignoring flag\n";
+        }
+    }
     
     U1 = current_state->energy(the_forces);
     V1 = current_state->area();
     N1 = current_state->n_objects();
 
     // Print report of state, both in terminal and log
+    logger << "After" << std::to_string( 0 ) << " steps...\n";
     logger << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % pressure % beta;
     logger << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
 
-    dl_max = simple_min(current_state->x_size, current_state->y_size)/2.0;
+    dl_max = simple_min(current_state->width(), current_state->height())/2.0;
 
     // Jiggle everything to remove bad contacts from save/load
     i = 0;          // Counter for number of shifts.
@@ -337,8 +363,11 @@ int main(int argc, char** argv) {
     the_integrator = new integrator(the_forces);
     the_integrator->dl_max = dl_max;
 
-    if( verbose )
+    if( verbose ){
+        logger << "With" << (current_state->is_periodic?" ":"out ") << "periodic boundary conditions.\n";
+        logger << "Boundary is " << (current_state->is_rectangle ? "rectangle" : "polygon") << "\n";
         logger << "Starting iteration loop\n";
+    }
 
     for(i=0;i<it_max;){
 
@@ -376,7 +405,7 @@ int main(int argc, char** argv) {
         traj_stream.close();				// Close the file
     }
  
-    if( verbose ) log_file << "Writing final configuration.\n";
+    if( verbose ) logger << "Writing final configuration.\n";
     if( out_name.length() > 0 ){
         std::ofstream out_file(out_name);
         current_state->write(out_file);
@@ -384,7 +413,7 @@ int main(int argc, char** argv) {
     } else {
         current_state->write(std::cout);
     }
-    if( verbose ) log_file << "Wrote configuration successfully.\n";
+    if( verbose ) logger << "Wrote configuration successfully.\n";
 
     delete current_state;
     delete the_forces;

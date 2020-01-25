@@ -8,7 +8,7 @@ OBJ = $(SRC:.cpp=.o)
 all : $(EXEC_NAME)
 
 NVT : $(OBJ)
-	$(CC) -g -o $@ $^ $(LIBFLAGS)
+	$(CC) -g -o $@ $^ $(LIB_FLAGS)
 
 %.o: %.cpp
 	$(CC) -o $@ -c $< $(CFLAGS)
