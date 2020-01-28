@@ -30,7 +30,7 @@ public:
     topology(topology *orig);            ///< Constructor with copy from pointer
     topology(const topology& orig);      ///< Constructor with copy from object
     topology(const char *filename);	 ///< Constructor read from named file
-    topology(FILE *source);	 	 ///< Constructor from file pointer
+    topology(std::istream& source); 	 ///< Constructor from input stream
     topology(float r);			 ///< Constructor default simple topology
 
     virtual ~topology();                 ///< Destructor
@@ -43,7 +43,7 @@ public:
     int     n_top;                       ///< how many topologies
 */
     int     write(const char *filename); ///< Write the topology to a named file. (Absent)
-    int     write(FILE *dest);  	 ///< Write the topology to a file.
+///    int     write(FILE *dest);  	 ///< Write the topology to a file.
     int     write(std::ostream& dest );  ///< Write the topology to c++ ofstream.
 
     void    add_molecule( float r );     ///< Add a new molecule type to the topology circle radius r.
@@ -54,7 +54,7 @@ public:
     size_t  n_molecules;                 ///< Number of different molecules in topology.
     vector<molecule>       molecules;    ///< List/Vector of the different molecule types.
 private:
-    void    read_topology(FILE *source); ///< Helper routine for reading a topology file.
+    void    read_topology(std::istream& source); ///< Helper routine for reading a topology file.
     bool    check();                     ///< Helper routine verify that the topology is good.
 
 /*  bool    check_topology();            ///< Verify all is well with the topology.

@@ -108,11 +108,7 @@ string prolog = ""
 "/LT7 { PL [20. 20. 20. 20. 20. 40.] 1 0.3 0 DL } def \n"
 "/LT8 { PL [20. 20. 20. 20. 20. 20. 20. 40.] 0.5 0.5 0.5 DL } def \n"
 " \n"
-"/green { 0 1.0 0 setrgbcolor } def \n"
-"/red   { 1.0 0 0 setrgbcolor } def \n"
-"/orange {0.7 0.35 0 setrgbcolor } def \n"
-"/blue  { 0 0 1.0 setrgbcolor } def \n"
-"/black { 0 setgray} def \n"
+#include "color-names.ps"
 " \n"
 "% Symbols \n"
 "/CircE { currentpoint symbolsize dup 0 rmoveto 0 360 arc stroke } def \n"
@@ -230,7 +226,7 @@ int main(int argc, char** argv) {
     current_state->add_topology(a_topology);    // Associate topology with the configuration,
     if( verbose ){
         std::cerr << "Set up topology:\n";
-        a_topology->write( stderr );
+        a_topology->write( std::cerr );
         std::cerr << "================\n";
     }
 

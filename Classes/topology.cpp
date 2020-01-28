@@ -19,9 +19,6 @@
 
 using namespace std;
 
-#include <boost/format.hpp>
-using boost::format;
-
 topology::topology() {                          // An empty topology has no molecules or atoms.
     n_atom_types = 0;
     n_molecules  = 0;
@@ -49,16 +46,12 @@ topology::topology(topology* orig){		// Make a deep copy
 }
 
 topology::topology(const char *filename) {      // Read the topology from a named file.
-    FILE *source;
-    if(( source = fopen( filename, "r" )) != NULL ){
-        read_topology( source );
-        fclose( source );
-    } else {
-        throw std::runtime_error("Error opening file");
-    }
+    ifstream ff(filename);
+    read_topology( ff );
+    ff.close();
 }
 
-topology::topology(FILE *source) {              // Read the topology from an open file.
+topology::topology(std::istream& source) {      // Read the topology from an open file.
     read_topology( source );
 }
 
@@ -68,7 +61,7 @@ topology::topology(float size) {
     add_molecule( size );
 }
 
-topology::~topology() {				// Need to destroy the atoms of the molecules too !!! BUG
+topology::~topology() {
     molecules.resize(0);			// Destroy the molecules
     n_molecules = 0;
     atom_sizes.resize(0);
@@ -83,52 +76,126 @@ bool topology::check() {			// Should also check all molecules and names!
         ( n_atom_types == atom_sizes.size() ) );
 }
 
-void
-topology::read_topology(FILE *source) {	        /// @todo Error handling and comments
-    size_t	i;
-    char	name[64];
+/**
+ * Helper function to strip blank lines and comments from an input stream.
+ * This should really be declared in common.h and defined in common.cpp
+ * TODO Create and organise common.cpp
+ */
+bool
+my_getline(std::istream& ff, string *line){
+    while(getline(ff, *line)){		        // Read a new line
+        if(line->find('#')<line->npos)		// Remove comments
+            line->erase(line->find('#'));
+        while(line->size() && isspace(line->front())) 
+            line->erase(line->begin());
+        while(line->size() && isspace(line->back())) 
+            line->pop_back();
+        if( !line->empty() ) return true;
+    }
+    return false;
+}
 
-    fscanf( source, "%lu\n", &n_atom_types );
+
+/**
+ * Read a topology from a FILE
+ * @param source a FILE pointer for an input stream.
+ *
+ * This should deal sensibly with errors and be able to ignore blank lines
+ * and comments that run from # to the end of the line.
+ * Various errors either from the file reading or the file structure will
+ * cause a runtime_error to be thrown.
+ */
+void
+topology::read_topology(std::istream& ff ) {
+    size_t	i;
+    int		size;
+    std::string	line;
+    std::string	name;
+
+    // Check if the file exists
+    if(ff.fail())                     throw runtime_error("Could not open topology file\n");
+    if(!my_getline(ff, &line))        throw runtime_error("Found no content in the topology file\n");
+    istringstream iss(line);
+    if (!(iss >> n_atom_types))       throw runtime_error("First line of the topology file should have number of atom types, exiting ...\n");
     atom_names.resize(n_atom_types);
     atom_sizes.resize(n_atom_types);
     for( i = 0; i < n_atom_types; i++ ){
-        fscanf( source, "%s %lf\n", name, &(atom_sizes(i)) );
+        if(!my_getline(ff, &line))    throw runtime_error("Error reading atom list unexpected end..\n");
+        iss.clear();
+        iss.str(line);
+        if( !(iss >> name >> size ))  throw runtime_error("Error reading atom list unexpected line...\n");
+        atom_sizes[i] = size;
 	atom_names(i).assign(name);
     }
-    fscanf( source, "%lu\n", &n_molecules );
+
+    if(!my_getline(ff, &line))        throw runtime_error("File ended before molecule descriptions., exiting... \n");
+    iss.clear();
+    iss.str(line);
+    if (!(iss >> n_molecules))        throw runtime_error("Failed to read number of molecules, exiting ...\n");
     molecules.resize(n_molecules);
-    for( i = 0; i < n_molecules; i++ )
-        molecules(i).read( source );
+    for( i = 0; i < n_molecules; i++ ){
+        if(!my_getline(ff, &line))    throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+        iss.clear();
+        iss.str(line);
+        if (!(iss >> name))           throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+        molecules[i].mol_name.assign(name);
+        if(!my_getline(ff, &line))    throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+        iss.clear();
+        iss.str(line);
+        if (!(iss >> molecules[i].n_atoms)) 
+                                      throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+        assert( molecules[i].n_atoms > 0 );
+        molecules[i].the_atoms.resize(molecules[i].n_atoms);
+        for(int j=0; j< molecules[i].n_atoms; j++ ){
+            if(!my_getline(ff, &line ))
+                                      throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+            iss.clear();
+            iss.str(line);
+            if (!(iss >> molecules[i].the_atoms[j].type
+                      >> molecules[i].the_atoms[j].x_pos
+                      >> molecules[i].the_atoms[j].y_pos
+                      >> molecules[i].the_atoms[j].color ))
+                                      throw runtime_error("File ended unexpectedly in molecule descriptions., exiting... \n");
+            if( molecules[i].the_atoms[j].type >= (int) n_atom_types )
+                                      throw runtime_error("Undefined atom type in molecule\n");
+        }
+    }
 }
 
+/**
+ * Write the topology to an ostream.
+ * @param the address of the output stream.
+ * @return true for success.
+ *
+ * TODO Error handling
+ */
 int
-topology::write(FILE *dest){                  /// @todo Error handling and comments
+topology::write(ostream& dest){
     size_t	        i;
 
-    fprintf( dest, "%lu\n", n_atom_types );
+    dest << n_atom_types << "\n";
     for( i = 0; i < n_atom_types; i++ ){
-        fprintf( dest, "%s %lf\n", atom_names(i).c_str(), atom_sizes(i) );
+        dest << atom_names(i) << "\t" << atom_sizes(i) << "\n";
     }
-    fprintf( dest, "%lu\n", n_molecules );
-    for( i = 0; i < n_molecules; i++ )
-        molecules(i).write( dest );
+    dest << n_molecules << "\n";
+    for( i = 0; i < n_molecules; i++ ){
+        dest << molecules(i).mol_name.c_str() << "\n" 
+             << std::to_string(molecules(i).n_atoms) << "\n";
+        for(int j = 0; j < molecules(i).n_atoms; j++)
+            dest << molecules(i).the_atoms(j).type << "\t" 
+                 << molecules(i).the_atoms(j).x_pos << "\t" 
+                 << molecules(i).the_atoms(j).y_pos << "\t" 
+                 << molecules(i).the_atoms(j).color << "\n";
+    }
     return true;
 }
 
-int
-topology::write(ostream& dest){            /// @todo Error handling and comments
-    size_t	        i;
-
-    dest << boost::format("%lu\n") % n_atom_types;
-    for( i = 0; i < n_atom_types; i++ ){
-        dest << boost::format("%s %lf\n") % atom_names(i).c_str() % atom_sizes(i);
-    }
-    dest << boost::format("%lu\n") % n_molecules;
-    for( i = 0; i < n_molecules; i++ )
-        molecules(i).write( dest );
-    return true;
-}
-
+/**
+ * Add a simple molecules (1 central atom) to the topology.
+ * @param r the radius of the atom to add for this molecule.
+ *
+ * This is used as for the default topology file.
+ */
 void
 topology::add_molecule( float r ){
     int  i;

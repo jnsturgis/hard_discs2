@@ -2,7 +2,7 @@
 
 ./config_test
 ./polygon_test
-./topology_test
+./topology_test test2.topo
 
 ../makeconfig/makeconfig -v 100 100 5
 ../makeconfig/makeconfig -v 100 100 5 5
@@ -15,7 +15,7 @@
 
 valgrind ./config_test
 valgrind ./polygon_test
-valgrind ./topology_test
+valgrind ./topology_test test2.topo
 
 valgrind ../makeconfig/makeconfig -v 100 100 5 5
 valgrind ../shrinkconfig/shrinkconfig -v -s 0.5 test2.config

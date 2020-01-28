@@ -71,19 +71,10 @@ config::config(string in_file) {
     ff.close();
 }
 
-bool
-my_getline(std::istream& ff, string *line){
-    while(getline(ff, *line)){		        // Read a new line
-        if(line->find('#')<line->npos)		// Remove comments
-            line->erase(line->find('#'));
-        while(line->size() && isspace(line->front())) 
-            line->erase(line->begin());
-        while(line->size() && isspace(line->back())) 
-            line->pop_back();
-        if( !line->empty() ) return true;
-    }
-    return false;
-}
+/**
+ * This is messy as defined in topology.cpp
+ */
+bool my_getline(std::istream& ff, string *line);
 
 /*
  * Read a configuration file as a stream. 

@@ -77,16 +77,6 @@ atom::write(std::ostream& dest){
     return EXIT_SUCCESS;
 }
 
-/** \brief Read an atom description from a file.
- *
- *  \param dest FILE*   The file pointer to the file open for reading.
- *  On exit the values of the atom descriptors are changed.
- */
-void
-atom::read(FILE *source ){
-    fscanf(source, "%d %lf %lf %s\n", &type, &x_pos, &y_pos, &color[0]);
-}
-
 /** \brief Copy an atom description to this atom.
  *
  *  \param orig const atom&   Pointer to the original atom.

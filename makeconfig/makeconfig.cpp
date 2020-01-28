@@ -146,7 +146,7 @@ main(int argc, char **argv)
     a_config->add_topology(a_topology);         // Assocuate topology with the configuration.
     if( verbose ){
         std::cerr << "Set up topology:";
-        a_topology->write( stderr );
+        a_topology->write( std::cerr );
         std::cerr << "================\n";
     }
 

@@ -16,10 +16,6 @@ molecule::molecule(molecule *orig){
     }
 }
 
-molecule::molecule(FILE *source){
-    read(source);
-}
-
 molecule::~molecule(){
     the_atoms.resize(0);
 }
@@ -36,6 +32,7 @@ molecule::rename( std::string a_name ){
     mol_name = a_name;
 }
 
+/*
 int
 molecule::write(FILE *dest){
     int     i;
@@ -46,6 +43,7 @@ molecule::write(FILE *dest){
         the_atoms(i).write( dest );
     return true;
 }
+*/
 
 int
 molecule::write(std::ostream& dest){
@@ -57,17 +55,3 @@ molecule::write(std::ostream& dest){
     return true;
 }
 
-void
-molecule::read(FILE *source){
-    int     i;
-    char    name[64];
-
-    assert( n_atoms == 0 );
-    fscanf( source, "%s\n", (char *)(&name) );
-    mol_name.assign(name);
-    fscanf( source, "%d\n", &n_atoms );
-    assert( n_atoms > 0 );
-    the_atoms.resize(n_atoms);
-    for( i=0; i< n_atoms; i++ )
-        the_atoms(i).read(source);
-}

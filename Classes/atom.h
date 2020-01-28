@@ -38,7 +38,6 @@ public:
 
     int     write(FILE *dest);  ///< Write the atom descriptor
     int     write(std::ostream& dest);  ///< Write the atom descriptor
-    void    read(FILE *source); ///< Fill in null atom properties from file
     void    copy(const atom& orig);
 
     int     type;               ///< Integer atom type, controls interactions

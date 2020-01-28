@@ -140,7 +140,7 @@ main(int argc, char **argv)
 
     if( verbose ){
         std::cerr << "Topology is loaded\n";
-        a_topology->write( stderr );
+        a_topology->write( std::cerr );
         std::cerr << "================\n";
     }
 

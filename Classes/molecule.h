@@ -25,16 +25,14 @@ class molecule {
 public:
     molecule();				///< Constructor for an empty molecule
     molecule(molecule *orig);		///< Constructor copying original
-    molecule(FILE *source );		///< Read the molecule from an open file
 
     virtual ~molecule();		///< A destructor to remove the molecule
 
     void add_atom( atom *an_atom );	///< Add an atom to the molecule
     void rename( std::string a_name );  ///< Change the name of a molecule
 
-    int	write(FILE *dest);		///< Write the molecule to an opened file
+///    int	write(FILE *dest);		///< Write the molecule to an opened file
     int	write(std::ostream& dest);	///< Write the molecule to a stream
-    void read(FILE *dest);              ///< Fill an empty molecule from a file
 
     std::string		mol_name;	///< A name for the molecule
     int         	n_atoms;	///< The number of atoms in the molecule

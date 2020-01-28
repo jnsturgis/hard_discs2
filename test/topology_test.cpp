@@ -6,7 +6,7 @@
 
 #define EPSILON 1e-15
 
-int main()
+int main(int argc, char **argv )
 {
     printf("-------------------------------\n");
     printf("Starting tests for topology config\n\n");
@@ -20,11 +20,7 @@ int main()
     std::cerr << "3";
     topology* topo3 = new topology(0.5);		// Simple topology radius 0.5 disc
     std::cerr << "4";
-
-    FILE *fp = fopen("test1.topo","r");
-    topology* topo4 = new topology( fp );		// Read from a file pointer
-    fclose(fp);
-    std::cerr << "5";
+    topology* topo4 = new topology(argv[1]);		// From argument named file
 
     printf("Constructors tested for topology config\n");
 
