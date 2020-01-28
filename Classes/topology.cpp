@@ -208,7 +208,7 @@ topology::add_molecule( float r ){
     atom_names(i) = "Simple";
     atom_sizes(i) = r;
 
-    an_atom = new atom(i, 0.0, 0.0, "red" );
+    an_atom = new atom(i, 0.0, 0.0, "Red" );
 
     i = n_molecules;
     n_molecules++;

@@ -60,6 +60,8 @@ public:
     int     write( FILE *dest );
     int     write( std::ostream& dest );
 
+    void		ps_draw(std::ostream& dest );
+    
     int     n_vertex;
     const Point   get_vertex(int i);  ///< Retrieve data (JS 24/1/20)
 

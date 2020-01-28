@@ -241,6 +241,16 @@ polygon::write( std::ostream& dest ){
     return EXIT_SUCCESS;
 }
 
+void
+polygon::ps_draw( std::ostream& dest ){
+    Point curr = _vertices[0];
+    dest << curr.x << " " << curr.y << " moveto\n";
+    for( int i=1; i < n_vertex; i++ ){
+        Point curr = _vertices[i];
+        dest << curr.x << " " << curr.y << " lineto\n";
+    }
+}
+
 int
 polygon::winding(){			/// Return +ve if CW winding -ve cor CCW
     double sum = (_vertices[0].x - _vertices[n_vertex-1].x)*(_vertices[0].y - _vertices[n_vertex-1].y);

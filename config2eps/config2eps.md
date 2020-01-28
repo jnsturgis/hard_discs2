@@ -1,9 +1,9 @@
 # The config2eps program {#config2eps}
 
-\brief   Convert a configuration into a postscript figure.
-\author  James Sturgis
-\date    April 12, 2018
-\version 1.0
+* brief   Convert a configuration into a postscript figure.
+* author  James Sturgis
+* date    April 12, 2018
+* version 1.0
 
 The program converts a configuration file, read from the input, to an encapuslated
 postscript file containing a representation of the configuration in which each atom
@@ -18,13 +18,7 @@ The optional argument '-t topology' allows you to define a topology file and so
 control the representation of the different objects in the configuration. 
 The format of the topology file is described [here](@ref topology_file).
 
-The input is expected to be a configuration file describing the box, and
+The input is expected to be a configuration file describing the configuration, and
 the different objects. The structure of this file is documented [here](@ref config_file).
 
 The output is (should be) a valid encapsulated postscript file.
-
-\todo    Introduce non square areas scaled correctly.
-\todo    More control on preamble and ending of output.
-\todo	 More error checking reading topology file.
-\todo    More error checking reading the configuration (not just a crash).
-
