@@ -108,7 +108,7 @@ my_getline(std::istream& ff, string *line){
 void
 topology::read_topology(std::istream& ff ) {
     size_t	i;
-    int		size;
+    double	size;
     std::string	line;
     std::string	name;
 

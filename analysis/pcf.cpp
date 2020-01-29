@@ -1,4 +1,7 @@
-
+/**
+ * @brief Calculate the pair correlation function for a collection of distributions
+ */
+ 
 #define	MAXBIN		5000
 
 #include "../Classes/config.h"

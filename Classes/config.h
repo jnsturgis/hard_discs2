@@ -142,6 +142,10 @@ public:
     object				*get_object(int index); ///< find an object in the configuration (JS 8/1/20)
     bool					rect_2_poly();	    ///< Convert rectangle container to a polygon.
     bool					poly_2_rect();	    ///< Convert rectangular polygon container to a rectangle.
+    polygon		*convex_hull(bool expand
+    							 );		///< Calculate convex hull around objects.
+    void		set_poly(polygon *a_poly 
+    							 );		///< Set a_poly as new perimeter.
 private:
     bool        		test_clash( object *o1, object *o2
                                  ); ///< Check if there is a clash between 2 objects.

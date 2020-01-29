@@ -705,6 +705,60 @@ config::poly_2_rect(){
 }
 
 /**
+ * @brief Calculate convex hull around objects
+ * Finds a collection of points, that determine a convex perimeter enclosing
+ * all the objects in the configuration.
+ *
+ * @param expand should the hull be expanded to enclose finite sized objects.
+ * @return The convex hull calculated as a polygon.
+ */
+polygon		*
+config::convex_hull(bool expand){
+    polygon *a_poly = new polygon();
+	
+	/*
+    algorithm jarvis(S) is
+    // S is the set of points
+    // P will be the set of points which form the convex hull. Final set size is i.
+    pointOnHull = leftmost point in S // which is guaranteed to be part of the CH(S)
+    */
+    int	left_most = 0;
+    /*
+    i := 0
+    repeat
+        P[i] := pointOnHull
+        endpoint := S[0]      // initial endpoint for a candidate edge on the hull
+        for j from 0 to |S| do
+            // endpoint == pointOnHull is a rare case and can happen only when j == 1 and a better endpoint has not yet been set for the loop
+            if (endpoint == pointOnHull) or (S[j] is on left of line from P[i] to endpoint) then
+                endpoint := S[j]   // found greater left turn, update endpoint
+        i := i + 1
+        pointOnHull = endpoint
+    until endpoint = P[0]      // wrapped around to first hull point
+    */
+    
+	if(expand){									// If necessary increase size to include objects
+	}
+	return a_poly;
+}
+
+/**
+ * @brief Set the boundary to the provided polygon
+ * @param a_poly is a pointer to the new boundary object.
+ */
+void
+config::set_poly(polygon *a_poly){
+	if(is_rectangle){
+		is_rectangle = false;
+	} else {
+		delete poly;
+	}
+	poly = a_poly;
+	unchanged = false;
+	is_periodic  = false;
+}
+
+/**
  * Ensure that the object is inside the boundary. If using periodic conditions
  * use these to fix it. If not periodic conditions move onto boundary?
  *
@@ -889,27 +943,29 @@ config::ps_atoms( std::ostream& dest ){
             y  =  my_obj->pos_y + dx * sin(theta) + dy * cos(theta);
             my_color = the_topology->molecules(o_type).the_atoms(j).color;
                                             // Write postscript snippet for atom.
-            dest << format("newpath %g %g moveto %g %s fcircle \n") 
-                    % x % y % r % (my_color);
+            dest << "newpath " << x << " " << y << " moveto "
+                 << my_color << " " << r << " fcircle \n";
 
                                             // Handle intersections with the border
-            lr = 0; tb = 0;                 // need up to 4 copies.
-            if ( x < r ) lr = -1;
-            if ( x > x_size - r ) lr = +1;
-            if ( y < r ) tb = -1;
-            if ( y > y_size - r ) tb = +1;
-            if (lr != 0 ){                  // Copy on other side
-                dest << format("newpath %g %g moveto %g %s fcircle \n") 
-                    % (x-lr*x_size) % y % r % (my_color);
-            }
-            if (tb != 0 ){                  // Vertical copy
-                dest << format("newpath %g %g moveto %g %s fcircle \n") 
-                    % x % (y-tb*y_size) % r % (my_color);
-            }
-            if ((lr != 0 )&&(tb != 0)){     // In the corner!
-                dest << format("newpath %g %g moveto %g %s fcircle \n") 
-                    % (x-lr*x_size) % (y-tb*y_size)
-                    % r % ( my_color );
+            if( is_periodic ){
+                lr = 0; tb = 0;                 // need up to 4 copies.
+                if ( x < r ) lr = -1;
+                if ( x > (x_size - r)) lr = +1;
+                if ( y < r ) tb = -1;
+                if ( y > (y_size - r)) tb = +1;
+                if (lr != 0 ){                  // Copy on other side
+                    dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                         % (x-lr*x_size) % y % r % (my_color);
+                }
+                if (tb != 0 ){                  // Vertical copy
+                    dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                        % x % (y-tb*y_size) % r % (my_color);
+                }
+                if ((lr != 0 )&&(tb != 0)){     // In the corner!
+                    dest << format("newpath %g %g moveto %g %s fcircle \n") 
+                        % (x-lr*x_size) % (y-tb*y_size)
+                        % r % ( my_color );
+                }
             }
         }
     }

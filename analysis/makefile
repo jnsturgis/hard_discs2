@@ -1,13 +1,17 @@
 CC = g++
 CFLAGS = -Wall
 LIB_FLAGS = 
-EXEC_NAME = pcf
-SRC = $(wildcard *.cpp ../Classes/*.cpp)
+EXEC_NAME = pcf \
+            wrap
+SRC = $(wildcard ../Classes/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 
 all : $(EXEC_NAME)
 
-pcf : $(OBJ)
+pcf : pcf.o $(OBJ)
+	$(CC) -o $@ $^ -lboost_program_options
+
+wrap : wrap.o $(OBJ)
 	$(CC) -o $@ $^ -lboost_program_options
 
 %.o: %.cpp
