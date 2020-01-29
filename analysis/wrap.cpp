@@ -92,7 +92,6 @@ main( int argc, char **argv )
         std::cerr << "Set up topology:\n";
 
 	// The calculation
-
     a_poly = a_config->convex_hull(true);		// Calculate convex hull, expanded to include objects.
     a_config->set_poly(a_poly);					// Set as container
     

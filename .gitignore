@@ -47,6 +47,7 @@ shrinkconfig/shrinkconfig
 config2eps/config2eps
 
 analysis/pcf
+analysis/wrap
 
 test/config_test
 test/polygon_test

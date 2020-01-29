@@ -159,6 +159,8 @@ private:
     std::vector<object>	obj_list;           ///< The objects in the configuration
     topology    		*the_topology;      ///< The object topology file.
     bool        		check();            ///< Is the current configuration valid?
+    bool 				objects_inside(polygon *a_poly
+    							 );			///< Verify all objects are inside perimeter.
 };
 
 #endif /* CONFIG_H */

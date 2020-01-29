@@ -659,7 +659,10 @@ config::translate( double dx, double dy ){
     if( is_rectangle )
         rect_2_poly();
     poly->translate(dx,dy);
-
+    for(int i=0; i < (int)obj_list.size(); i++ ){
+    	obj_list[i].pos_x += dx;
+    	obj_list[i].pos_y += dy;
+    }
 }
 
 /**
@@ -690,6 +693,7 @@ config::rect_2_poly(){
 bool
 config::poly_2_rect(){
     if( is_rectangle ) return false;
+
     if( !poly->is_parallelogram() ) return false;
     poly->order_vertices();
     translate(-(poly->get_vertex(0).x), -(poly->get_vertex(0).y));
@@ -705,6 +709,55 @@ config::poly_2_rect(){
 }
 
 /**
+ * Determine if is p is left of line s->e as the sign of the z component 
+ * of the 3D cross product of s->p and s->e.
+ */
+bool
+on_left( double px, double py, double sx, double sy, double ex, double ey ){ // Is p on the left of the line s->e
+	return ((ex*py-ex*sy-sx*py-ey*px+ey*sx+sy*px)>0.0);
+}
+
+/**
+ * Check if all atoms of all objects are inside the boundary
+ * TODO improve this to work with periodic conditions and rectangles properly
+ */
+bool
+config::objects_inside( polygon *a_poly ){
+	object	*my_obj;
+	int		o_type, t;
+	double	theta, x, y, dx, dy, r;
+	
+	for( int i = 0; i < (int) obj_list.size(); i++ ){
+        my_obj = &obj_list[i];
+        theta  = my_obj->orientation;
+        o_type = my_obj->o_type;
+        if( o_type > object_types() ){          // Use object type 0 if not defined
+            o_type = 0;
+        }
+        if( is_rectangle ){
+        	if( my_obj->pos_x < 0.0 ) return false;
+        	if( my_obj->pos_y < 0.0 ) return false;
+        	if( my_obj->pos_x > x_size ) return false;
+        	if( my_obj->pos_y > y_size ) return false;
+        } else {
+        	for(int j = 0; j < the_topology->molecules(o_type).n_atoms; j++ ){
+                                            // Get atom information
+            	t  =  the_topology->molecules(o_type).the_atoms(j).type;
+            	dx =  the_topology->molecules(o_type).the_atoms(j).x_pos;
+            	dy =  the_topology->molecules(o_type).the_atoms(j).y_pos;
+            	r  =  the_topology->atom_sizes(t);      // Get radius
+            	                                // Calculate atom position
+            	x  =  my_obj->pos_x + dx * cos(theta) - dy * sin(theta);
+            	y  =  my_obj->pos_y + dx * sin(theta) + dy * cos(theta);
+            	if( !a_poly->is_inside(x, y, r))
+                    return false;
+            }
+        }
+	}
+	return true;
+}
+
+/**
  * @brief Calculate convex hull around objects
  * Finds a collection of points, that determine a convex perimeter enclosing
  * all the objects in the configuration.
@@ -715,30 +768,71 @@ config::poly_2_rect(){
 polygon		*
 config::convex_hull(bool expand){
     polygon *a_poly = new polygon();
-	
-	/*
-    algorithm jarvis(S) is
-    // S is the set of points
-    // P will be the set of points which form the convex hull. Final set size is i.
-    pointOnHull = leftmost point in S // which is guaranteed to be part of the CH(S)
-    */
-    int	left_most = 0;
-    /*
-    i := 0
-    repeat
-        P[i] := pointOnHull
-        endpoint := S[0]      // initial endpoint for a candidate edge on the hull
-        for j from 0 to |S| do
-            // endpoint == pointOnHull is a rare case and can happen only when j == 1 and a better endpoint has not yet been set for the loop
-            if (endpoint == pointOnHull) or (S[j] is on left of line from P[i] to endpoint) then
-                endpoint := S[j]   // found greater left turn, update endpoint
-        i := i + 1
-        pointOnHull = endpoint
-    until endpoint = P[0]      // wrapped around to first hull point
-    */
+    assert(obj_list.size()>=3);
     
-	if(expand){									// If necessary increase size to include objects
-	}
+    int	left_most = 0;
+    double x_min = obj_list[0].pos_x;
+    for( int i = 0; i < (int)obj_list.size(); i++ ){
+    	if( obj_list[i].pos_x < x_min ){
+    		x_min = obj_list[i].pos_x;
+    		left_most = i;
+    	}
+    }
+
+    int pointOnHull = left_most;
+    int endpoint = 0;
+    int	i = 0;
+
+    do{
+    	a_poly->add_vertex(obj_list[pointOnHull].pos_x,  obj_list[pointOnHull].pos_y);
+    	endpoint = (pointOnHull == 0)?1:0;
+    	for( int j = 0; j < (int)obj_list.size(); j++ ){
+    		if( j != pointOnHull){
+    		    if( on_left( obj_list[j].pos_x, obj_list[j].pos_y,
+    			    	a_poly->get_vertex(i).x, a_poly->get_vertex(i).y,
+    				    obj_list[endpoint].pos_x, obj_list[endpoint].pos_y) )
+    		        endpoint = j;
+    		}
+    	}
+    	i++;
+    	pointOnHull = endpoint;
+    } while (endpoint != left_most);
+
+	if(expand){									// If necessary increase size to include objects Don't think this works
+	    
+	    double	dl = 0.15 * the_topology->atom_sizes(0);	// A reasonable length to grow by.
+	    double	px, py;										// vector to previous vertex x,y
+	    double  qx, qy;										// vector to next vertex x,y
+	    double  r;											// for normalization
+	    polygon	*new_poly = new polygon();
+	    int		count = a_poly->n_vertex;
+	    do{    	
+	    	for(int i=0; i< count; i++ ){
+	    		px = a_poly->get_vertex((i-1) < 0?a_poly->n_vertex-1:i-1).x -  a_poly->get_vertex(i).x;
+	    		py = a_poly->get_vertex((i-1) < 0?a_poly->n_vertex-1:i-1).y -  a_poly->get_vertex(i).y;
+	    		r  = sqrt( px*px+py*py );
+	    		px /= r;									// Adjust to unit length
+	    		py /= r;
+	    		qx = a_poly->get_vertex((i+1) >= a_poly->n_vertex?0:i+1).x  -  a_poly->get_vertex(i).x;
+	    		qy = a_poly->get_vertex((i+1) >= a_poly->n_vertex?0:i+1).y  -  a_poly->get_vertex(i).y;
+	    		r  = sqrt( qx*qx+qy*qy );
+	    		qx /= r;									// Adjust to unit length
+	    		qy /= r;
+	    		px += qx;
+	    		py += qy;
+	    		r  = - sqrt( px*px+py*py );
+	    		px *= dl/r;									// Adjust to dl length
+	    		py *= dl/r;
+	    		new_poly->add_vertex(a_poly->get_vertex(i).x + px, a_poly->get_vertex(i).y + py);
+	    	}
+    		delete a_poly;
+	   		a_poly = new polygon(new_poly);
+	   		delete new_poly;
+	   		new_poly = new polygon();
+	    } while (!objects_inside( a_poly ));
+		delete new_poly;
+	}	
+
 	return a_poly;
 }
 
@@ -780,12 +874,12 @@ void config::fix_inbox( int obj_number ){
             while( pos_x > x_size ) pos_x -= x_size/2.0;
             while( pos_y < 0 )      pos_y += y_size/2.0;
             while( pos_y > y_size ) pos_y -= y_size/2.0;
-	} else {
+	    } else {
             while(! poly->is_inside(pos_x, pos_y)){
                 pos_x -= (pos_x - poly->center_x())/2.0;
                 pos_y -= (pos_y - poly->center_y())/2.0;
             }
-	}
+	    }
     }
 
     obj_list[obj_number].pos_x = pos_x;

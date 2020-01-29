@@ -60,7 +60,16 @@ polygon::~polygon(){
 
 void
 polygon::add_vertex( double x_val, double y_val ){
-    assert( n_vertex < n_alloc );
+	if( n_vertex == n_alloc ){
+		n_alloc += n_alloc;
+		Point *new_vertices = new Point[ n_alloc ];
+		for( int i = 0; i < n_vertex; i++ ){
+			new_vertices[i].x = _vertices[i].x;
+			new_vertices[i].y = _vertices[i].y;
+		}
+		delete _vertices;
+		_vertices = new_vertices;
+	}
     _vertices[n_vertex].x = x_val;
     _vertices[n_vertex].y = y_val;
     n_vertex++;
