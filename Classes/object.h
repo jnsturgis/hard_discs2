@@ -20,11 +20,14 @@
 
 class object {
 public:
+    object();				    ///< Constructor empty (invalid) object.
     object(int type, double x_pos,
            double y_pos, double angle );    ///< Constructor with explicit properties.
     object(const object& orig);             ///< Copy constructor
 
     virtual ~object();                      ///< Destructor
+
+    void    assign(const object &orig);	    ///< Copy assignment
 
     void    move(double dx, double dy);     ///< Move the object by dx, dy
     void    rotate(double angle );          ///< Rotate the object angle.

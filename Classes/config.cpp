@@ -30,7 +30,7 @@ config::config() {
     y_size       = 1.0;
     unchanged    = true;
     saved_energy = 0.0;
-    obj_list     = o_list();
+    obj_list.resize(0);
     the_topology = (topology *)NULL;
     is_periodic  = false;
     is_rectangle = true;
@@ -161,7 +161,8 @@ config::config_read(std::istream& ff){
             throw runtime_error("Problem in the coordinates...\n");
         
         my_obj = new object(o_type, x_pos, y_pos, angle );
-        obj_list.add(my_obj); 
+        obj_list.push_back(*my_obj);
+        delete my_obj;
         iss.clear();
     }
     if( my_getline(ff, &line )){			// Should be at end of file
@@ -179,8 +180,6 @@ config::config_read(std::istream& ff){
  * @param orig the original configuration to be copied.
  */
 config::config(config& orig) {
-    object  *my_obj1;
-    object  *my_obj2;
     x_size         = orig.x_size;
     y_size         = orig.y_size;
     saved_energy   = orig.saved_energy;
@@ -190,12 +189,9 @@ config::config(config& orig) {
     else
         the_topology = NULL;
     is_periodic    = orig.is_periodic;
-    obj_list.empty();
-    for(int i = 0; i < orig.n_objects(); i++){
-        my_obj1 = orig.obj_list.get(i);
-        my_obj2 = new object( my_obj1->o_type, my_obj1->pos_x,
-                my_obj1->pos_y, my_obj1->orientation);
-        obj_list.add(my_obj2);
+    obj_list.resize(orig.obj_list.size());
+    for(int i = 0; i < (int)obj_list.size(); i++){
+        obj_list[i].assign(orig.obj_list[i]);
     }
     // Add non-periodic bits
     is_rectangle   = orig.is_rectangle;
@@ -211,9 +207,6 @@ config::config(config& orig) {
  * @param orig pointer to the original configuration to be copied.
  */
 config::config(config* orig) {
-    object  *my_obj1;
-    object  *my_obj2;
-
     x_size         = orig->x_size;
     y_size         = orig->y_size;
     saved_energy   = orig->saved_energy;
@@ -223,12 +216,9 @@ config::config(config* orig) {
     else
         the_topology = NULL;
     is_periodic    = orig->is_periodic;
-    obj_list.empty();
-    for(int i = 0; i < orig->n_objects(); i++){
-        my_obj1 = orig->obj_list.get(i);
-        my_obj2 = new object( my_obj1->o_type, my_obj1->pos_x,
-                my_obj1->pos_y, my_obj1->orientation);
-        obj_list.add(my_obj2);
+    obj_list.resize(orig->obj_list.size());
+    for(int i = 0; i < (int)obj_list.size(); i++){
+        obj_list[i].assign(orig->obj_list[i]);
     }
     // Add non-periodic bits
     is_rectangle   = orig->is_rectangle;
@@ -280,17 +270,17 @@ double config::energy(force_field *&the_force) {
     if (! unchanged) {                      // Only if necessary
         saved_energy = 0.0;                 // Loop over the objects
                                             // This code needs optimizing.
-        for(i1 = 0; i1 < obj_list.size(); i1++ ){
-            my_obj1 = obj_list.get(i1);
+        for(i1 = 0; i1 < (int)obj_list.size(); i1++ ){
+            my_obj1 = &obj_list[i1];
             if( my_obj1->recalculate ){
                 value = 0.0;
-                for(i2 = 0; i2<obj_list.size(); i2++ ){
+                for(i2 = 0; i2<(int)obj_list.size(); i2++ ){
                     if(i1 != i2){            // If periodic then
                         double r, r2;
                         double dx = 0.0;
                         double dy = 0.0;
 
-                        my_obj2 = obj_list.get(i2);
+                        my_obj2 = &obj_list[i2];
                         if(is_periodic){     // Move my_obj2 to closest image
                                              // Check this code...
                             r  = my_obj2->pos_x - my_obj1->pos_x;
@@ -346,19 +336,15 @@ double config::energy(force_field *&the_force) {
  */
 
 int config::write( FILE *dest ){
-    int     i;
-    object  *this_obj;
-
     if( is_rectangle )
         fprintf( dest, "%9f %9f \n", x_size, y_size );
     else {
         fprintf( dest, "%9f %9f \n", 0.0, 0.0 );
         poly->write( dest );
     }
-    fprintf( dest, "%d\n", obj_list.size());
-    for(i = 0; i< obj_list.size(); i++){    // For each object in configuration
-        this_obj = obj_list.get(i);         // Get the object and
-        this_obj->write(dest);              // Write it to the file -- Pass the stream
+    fprintf( dest, "%d\n", (int)obj_list.size());
+    for(int i = 0; i< (int)obj_list.size(); i++){    // For each object in configuration
+        obj_list[i].write(dest);              // Write it to the file -- Pass the stream
     }
     return EXIT_SUCCESS;                    // Return all well
 }
@@ -376,9 +362,6 @@ int config::write( FILE *dest ){
  */
 
 int config::write(std::ostream& dest){
-    int     i;
-    object  *this_obj;
-    
     // Put the header and number of objects inside
     // Using boost for formatting, which seems the proper way in c++
     if( is_rectangle )
@@ -389,9 +372,8 @@ int config::write(std::ostream& dest){
     }
     dest << format("%d\n") % obj_list.size();
 
-    for(i = 0; i< obj_list.size(); i++){    // For each object in configuration
-        this_obj = obj_list.get(i);         // Get the object and
-        this_obj->write(dest);              // Write it to the file -- Pass the stream
+    for(int i = 0; i< (int) obj_list.size(); i++){    // For each object in configuration
+        obj_list[i].write(dest);              // Write it to the file -- Pass the stream
     }
     return EXIT_SUCCESS;                    // Return all well
 }
@@ -469,14 +451,13 @@ config::test_clash( object *obj1, object *obj2 ){
  */
 bool
 config::test_clash(){
-    int	i;
     object *obj1;
     object *obj2;
 
-    for(i=0;i<obj_list.size();i++){
-        obj1 = obj_list.get(i);
+    for(int i=0;i<(int)obj_list.size();i++){
+        obj1 = &obj_list[i];
         for(int j=0; j<i; j++){
-            obj2 = obj_list.get(j);
+            obj2 = &obj_list[j];
             if( test_clash( obj1, obj2 )) return true;
         }
     }
@@ -518,7 +499,7 @@ config::test_clash( object *new_object ){
     }
                                             // Loop over the objects.
     for(int i = 0; i < n_objects(); i++){
-        obj1 = obj_list.get(i);
+        obj1 = &obj_list[i];
         if(test_clash( obj1 ,new_object)) return true;
     }
     return false;
@@ -533,16 +514,12 @@ config::test_clash( object *new_object ){
  *
  */
 int config::object_types(){
-    int     i;
     int     max_type = -1;
 
-    assert( check() );
-
-    for(i = 0; i< obj_list.size(); i++ ){
-        max_type = simple_max(max_type, obj_list.get(i)->o_type);
+    for(int i = 0; i< (int) obj_list.size(); i++ ){
+        max_type = simple_max(max_type, obj_list[i].o_type);
     }
     assert(max_type>=0);
-//  assert( check() );
     return max_type;
 }
 
@@ -601,10 +578,10 @@ bool config::expand(double dl){
     } else {
         poly->expand( dl );
     }
-    unchanged = false;                      // The energies will be different
-    for(i=0;i<obj_list.size();i++){
-        obj_list.get(i)->recalculate = true;// Also for the objects
-        obj_list.get(i)->expand(dl);        // Move objects in rescaled box
+    unchanged = false;                      	// The energies will be different
+    for(i=0;i<(int)obj_list.size();i++){
+        obj_list[i].recalculate = true;		// Also for the objects
+        obj_list[i].expand(dl);        		// Move objects in rescaled box
     }
     return (test_clash());
 }
@@ -630,9 +607,9 @@ bool config::expand(double dl, int max_try ){
         poly->expand( dl );
     }
     unchanged = false;                      // The energies will be different
-    for(i=0;i<obj_list.size();i++){
-        obj_list.get(i)->recalculate = true;// Also for the objects
-        obj_list.get(i)->expand(dl);        // Move objects in rescaled box
+    for(i=0;i<(int)obj_list.size();i++){
+        obj_list[i].recalculate = true;// Also for the objects
+        obj_list[i].expand(dl);        // Move objects in rescaled box
     }
     for(i=0;i<max_try;i++){
       if(test_clash()) jiggle();
@@ -662,10 +639,10 @@ void config::move(int obj_number, double dl_max){
     dy = dist * cos(M_2PI*angle);
     dx = dist * sin(M_2PI*angle);
 
-    obj_list.get(obj_number)->move(dx, dy); 
+    obj_list[obj_number].move(dx, dy); 
 
     angle = rnd_lin(2*M_2PI)-M_2PI;
-    obj_list.get(obj_number)->rotate(angle);
+    obj_list[obj_number].rotate(angle);
 
     // Fix boundary conditions periodic or not.
     fix_inbox( obj_number );
@@ -735,8 +712,8 @@ config::poly_2_rect(){
  */
 void config::fix_inbox( int obj_number ){
 
-    double pos_x = obj_list.get(obj_number)->pos_x;
-    double pos_y = obj_list.get(obj_number)->pos_y;
+    double pos_x = obj_list[obj_number].pos_x;
+    double pos_y = obj_list[obj_number].pos_y;
 
     if( is_periodic ){
         while( pos_x < 0 )      pos_x += x_size;
@@ -757,8 +734,8 @@ void config::fix_inbox( int obj_number ){
 	}
     }
 
-    obj_list.get(obj_number)->pos_x = pos_x;
-    obj_list.get(obj_number)->pos_y = pos_y;
+    obj_list[obj_number].pos_x = pos_x;
+    obj_list[obj_number].pos_y = pos_y;
 }
 
 /**
@@ -770,7 +747,7 @@ void config::fix_inbox( int obj_number ){
  */
 void config::rotate(int obj_number, double theta_max){
     double angle = rnd_lin(theta_max)-theta_max/2.0;
-    obj_list.get(obj_number)->rotate(angle);
+    obj_list[obj_number].rotate(angle);
 }
 
 /**
@@ -783,8 +760,9 @@ config::rotate( double angle ){
     if( is_rectangle ) rect_2_poly();
     poly->rotate( angle );
     for(int i=0; i< n_objects(); i++){
+    	  /// TODO fix positions
         /// calculate new xy coordinates TODO
-        obj_list.get(i)->rotate( -angle );
+        obj_list[i].rotate( -angle );
     }    
 }
 
@@ -799,10 +777,10 @@ void    config::invalidate_within(double distance, int index){
     object  *obj1;
     object  *obj2;
 
-    obj1 = obj_list.get(index);
+    obj1 = &obj_list[index];
     for(int i=0; i< n_objects(); i++)       // For each object in the cnfiguration
       if (i!= index){                       // That is difference
-        obj2 = obj_list.get(i);             // Check distance
+        obj2 = &obj_list[i];             // Check distance
         if( obj1->distance(obj2, x_size, y_size, is_periodic) < distance ) // TODO: Need to check works for non-rectangles
             obj2->recalculate = true;       // and set flag if necessary
     }
@@ -849,7 +827,7 @@ config::height(){
  *
  */
 void    config::add_object(object* orig ){
-    obj_list.add(orig);
+    obj_list.push_back(*orig);
 }
 
 /** \brief Fetch object from list by index
@@ -859,7 +837,7 @@ void    config::add_object(object* orig ){
  */
 object	*config::get_object( int index ){
     assert( index < n_objects() );
-    return obj_list.get(index);
+    return &obj_list[index];
 }
 
 /** \brief Output a postscript snippet to draw the configuration
@@ -892,8 +870,8 @@ config::ps_atoms( std::ostream& dest ){
 
     max_o_type = the_topology->n_atom_types -1 ;
                                             // Loop over the objects.
-    for(int i = 0; i < obj_list.size(); i++){
-        my_obj = obj_list.get(i);
+    for(int i = 0; i < (int)obj_list.size(); i++){
+        my_obj = &obj_list[i];
         theta  = my_obj->orientation;
         o_type = my_obj->o_type;
         if( o_type > max_o_type ){          // Use object type 0 if not defined
@@ -939,9 +917,9 @@ config::ps_atoms( std::ostream& dest ){
 
 bool
 config::has_clash( int i ){
-    for(int j=0; j< obj_list.size(); j++ ){
+    for(int j=0; j< (int) obj_list.size(); j++ ){
         if (i!=j) {
-            if( test_clash( obj_list.get(i), obj_list.get(j) )) return true;
+            if( test_clash( &obj_list[i], &obj_list[j] )) return true;
         }
     }
     return false;
@@ -955,7 +933,7 @@ config::jiggle(){
     double  dist, angle;
     double  dx, dy;
 
-    for( int i=0; i < obj_list.size(); i++){
+    for( int i=0; i < (int)obj_list.size(); i++){
         if( has_clash( i )){
             /* Calculate shift distance */
             dist = rnd_lin(1.0);
@@ -966,10 +944,10 @@ config::jiggle(){
             dy = dist * cos(M_2PI*angle);
             dx = dist * sin(M_2PI*angle);
 
-            obj_list.get(i)->move(dx,dy);
+            obj_list[i].move(dx,dy);
             fix_inbox( i );
             angle = rnd_lin(M_2PI)-M_PI;
-            obj_list.get(i)->rotate(angle);
+            obj_list[i].rotate(angle);
         }
     }
 }

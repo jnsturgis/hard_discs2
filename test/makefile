@@ -26,7 +26,7 @@ polygon_test: polygon_test.o ../Classes/polygon.o
 topology_test: topology_test.o ../Classes/topology.o ../Classes/atom.o ../Classes/molecule.o
 	$(CC) -g -o $@ $^
 
-config_test: config_test.o ../Classes/config.o ../Classes/polygon.o ../Classes/object.o  ../Classes/o_list.o  ../Classes/atom.o ../Classes/molecule.o ../Classes/force_field.o ../Classes/topology.o
+config_test: config_test.o ../Classes/config.o ../Classes/polygon.o ../Classes/object.o  ../Classes/atom.o ../Classes/molecule.o ../Classes/force_field.o ../Classes/topology.o
 	$(CC) -g -o $@ $^
 
 %.o: %.cpp

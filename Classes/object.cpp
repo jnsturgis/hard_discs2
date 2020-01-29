@@ -17,6 +17,18 @@
 using boost::format;
 
 /**
+ * @brief Constructor of an empty object.
+ */
+object::object() {
+    o_type       = -1;		/// Marks uninitialized invalid object
+    pos_x        = 0.0;
+    pos_y        = 0.0;
+    orientation  = 0.0;
+    recalculate  = true;
+    saved_energy = 0.0;
+}
+
+/**
  * @brief Constructor with known type, position and orientation.
  * @param type      Object type (should be known to topology).
  * @param x_pos     Object location (x direction).
@@ -37,18 +49,27 @@ object::object(int  type, double x_pos, double y_pos, double angle ) {
  * @param orig  The original object.
  */
 object::object(const object& orig) {
-    o_type       = orig.o_type;
-    pos_x        = orig.pos_x;
-    pos_y        = orig.pos_y;
-    orientation  = orig.orientation;
-    recalculate  = true;            // Can't guarantee same context.
-    saved_energy = 0.0;             // This does not mater.
+    assign(orig);
 }
 
 /**
  * Destructor for objects
  */
 object::~object() {
+}
+
+/**
+ * @brief   Constructor for copying an object.
+ * @param orig  The original object.
+ */
+void
+object::assign(const object& orig) {
+    o_type       = orig.o_type;
+    pos_x        = orig.pos_x;
+    pos_y        = orig.pos_y;
+    orientation  = orig.orientation;
+    recalculate  = true;            // Can't guarantee same context.
+    saved_energy = 0.0;             // This does not mater.
 }
 
 /**

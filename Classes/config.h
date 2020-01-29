@@ -74,7 +74,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "o_list.h"
+#include "object.h"
 #include "polygon.h"
 
 using namespace std;
@@ -87,74 +87,74 @@ public:
     config(std::string in_file);    ///< Create by reading a named file.
     config(std::istream& source);   ///< Create from an input source.
 
-    virtual ~config();              ///< Destroy a conformation
+    virtual 			~config();              ///< Destroy a conformation
 
 /* TODO Class interface needs cleaning */
 /* Input and output functions */
-    int         write(std::ostream& dest
+    int         		write(std::ostream& dest
                               );    ///< Write the conformation to a stream.
-    int         write(FILE *dest);  ///< Write the conformation to a 'c' file.
-    void        ps_atoms(std::ostream& dest
+    int         		write(FILE *dest);  ///< Write the conformation to a 'c' file.
+    void        		ps_atoms(std::ostream& dest
                                );   ///< Write the postscript part for the atoms.
 
 /* Setting up a configuration */
-    void        add_topology(topology *a_topology
+    void      			add_topology(topology *a_topology
                                  ); ///< Attach a topology to the configuration
-    void        add_object(object *orig
+    void        		add_object(object *orig
                                  ); ///< Insert an object in the configuration
-    double      x_size;             ///< The width of rectangular configuration
-    double      y_size;             ///< The height of rectangular configuration
-    double	width();            ///< The width of any configuration
-    double	height();           ///< The height of any configuration
-    bool        unchanged;          ///< Is the configuration unchanged since the last evaluation of energy.
-    bool        is_periodic;        ///< Use periodic boundary conditions
+    double      		x_size;             ///< The width of rectangular configuration
+    double  		   y_size;             ///< The height of rectangular configuration
+    double				width();            ///< The width of any configuration
+    double				height();           ///< The height of any configuration
+    bool        		unchanged;          ///< Is the configuration unchanged since the last evaluation of energy.
+    bool        		is_periodic;        ///< Use periodic boundary conditions
 
-    bool        is_rectangle;       ///< Use x_size, y_size rather then a polygon.
-    int		n_vertex;	    ///< Number of vertices in polygon (doublon)
-    polygon     *poly;              ///< The bounding polygon
+    bool     		   is_rectangle;       ///< Use x_size, y_size rather then a polygon.
+    int					n_vertex;	    ///< Number of vertices in polygon (doublon)
+    polygon     		*poly;              ///< The bounding polygon
 
 /* Obtaining information on the configuration */
-    double  area();                 ///< Return the total area of the configuation.
-    int     object_types();         ///< The number of different object types.
-    int     n_objects();            ///< The number of objects in configuration.
+    double  			area();                 ///< Return the total area of the configuation.
+    int     			object_types();         ///< The number of different object types.
+    int     			n_objects();            ///< The number of objects in configuration.
 
-    double  energy(force_field *&the_force
+    double  			energy(force_field *&the_force
                                );   ///< Calculate the energy of a conformation using the given force field.
-    bool    test_clash( object *new_object 
+    bool    			test_clash( object *new_object 
                                  ); ///< Check if there is a clash to insert new object.
-    bool    test_clash();           ///< Check if there are any clashes between objects.
-    double  rms(const config& ref); ///< Calculate rms difference from a second conformation.
+    bool    			test_clash();           ///< Check if there are any clashes between objects.
+    double  			rms(const config& ref); ///< Calculate rms difference from a second conformation.
 
 /* Manipulating the configuration */
-    bool    expand( double dl );    ///< Expand the surface area by a factor dl.
-    bool    expand( double dl, int max_try 
+    bool    			expand( double dl );    ///< Expand the surface area by a factor dl.
+    bool    			expand( double dl, int max_try 
                               );    ///< Expand the surface area by a factor dl allow several attempts to remove clashes.
-    void    move(int obj_number, double dl_max 
+    void    			move(int obj_number, double dl_max 
                                 );  ///< Move an object in the configuration.
-    void    translate( double dx,   ///< Translate the whole reference frame dx, dy
+    void    			translate( double dx,   ///< Translate the whole reference frame dx, dy
                       double dy );
-    void    rotate( double theta ); ///< Rotate the configuration by theta around 0,0
-    void    rotate(int obj_number, double theta_max
+    void    			rotate( double theta ); ///< Rotate the configuration by theta around 0,0
+    void    			rotate(int obj_number, double theta_max
                                  ); ///< Rotate an object in the configuration.
-    void    fix_inbox( int obj_number ); ///< Force object inside perimeter.
-    void    invalidate_within(double distance, int index 
+    void    			fix_inbox( int obj_number ); ///< Force object inside perimeter.
+    void    			invalidate_within(double distance, int index 
                                  ); ///< Mark energies for recalculation.
-    object	*get_object(int index); ///< find an object in the configuration (JS 8/1/20)
-    bool	rect_2_poly();	    ///< Convert rectangle container to a polygon.
-    bool	poly_2_rect();	    ///< Convert rectangular polygon container to a rectangle.
+    object				*get_object(int index); ///< find an object in the configuration (JS 8/1/20)
+    bool					rect_2_poly();	    ///< Convert rectangle container to a polygon.
+    bool					poly_2_rect();	    ///< Convert rectangular polygon container to a rectangle.
 private:
-    bool        test_clash( object *o1, object *o2
+    bool        		test_clash( object *o1, object *o2
                                  ); ///< Check if there is a clash between 2 objects.
-    bool        has_clash( int i ); ///< check if the object with index i has a clash. 
-    void        jiggle();           ///< Shake objects a bit to try and remove bad contacts.
+    bool        		has_clash( int i ); ///< check if the object with index i has a clash. 
+    void        		jiggle();           ///< Shake objects a bit to try and remove bad contacts.
 
-    void	config_read(std::istream& src
+    void					config_read(std::istream& src
                                  ); ///< Helper function reading from a stream.
 
-    double      saved_energy;       ///< The last result of energy evaluation.
-    o_list      obj_list;           ///< The objects in the configuration
-    topology    *the_topology;      ///< The object topology file.
-    bool        check();            ///< Is the current configuration valid?
+    double      		saved_energy;       ///< The last result of energy evaluation.
+    std::vector<object>	obj_list;           ///< The objects in the configuration
+    topology    		*the_topology;      ///< The object topology file.
+    bool        		check();            ///< Is the current configuration valid?
 };
 
 #endif /* CONFIG_H */
