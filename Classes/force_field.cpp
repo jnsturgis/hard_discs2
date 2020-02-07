@@ -111,41 +111,43 @@ force_field::read_force_field( FILE *source ){
     int         line_number = 0;
     int		i, j = 0;
     double       number;
-    char	data[32];			        // 32 is maximum length of a color
 
     while(( read = getline( &line, &len, source )) != -1 ){
+    	istringstream iss(line);
+    	char color_name[32];		        // 32 is maximum length of a color
         line_number++;
         if( !is_comment( line )){
             switch( logical_line ){
-            case 0: sscanf( line, "%d ", &type_max );	// Number of different atom types
-                    if( type_max <= 0 )                 // Sanity check
+            case 0: iss >> type_max;	// Number of different atom types
+                    if( type_max <= 0 ){                // Sanity check
                         throw std::runtime_error( "Error in force field file Line number "
                             + std::to_string(line_number)
                             + " : Invalid number of atom types "
                             + std::to_string(type_max) );
+                    }
                     radius.resize( type_max );          // Resize arrays as necessary.
                     color.resize(type_max);
                     energy.resize(type_max, type_max);
                     logical_line++;                     // Move on
                     break;
             case 1: for( i = 0; i < type_max; i++ ){     // sizes
-                        sscanf( line, "%lf", &number );
+                        iss >> number;
                         radius[i] = number;
                     }
                     logical_line++;
                     break;
             case 2: for( i = 0; i < type_max; i++ ){    // colors
-                        sscanf( line, "%s", (char *)(&data) );
-                        color(i) = data;
+            			iss >> color_name;
+                        color(i) = color_name;
                     }
                     logical_line++;
                     break;
             case 3: 	                                // interaction cutoff distance and length scale.
-                    sscanf( line, "%lf %lf", &cut_off, & length );
+                    iss >> cut_off >> length;
                     logical_line++;
                     break;
             case 4: for( i = 0; i < type_max; i++ ){    // Read in energy matrix
-                        sscanf( line, "%lf", &number );
+                        iss >> number;
                         energy(i,j) = number;
                     }
                     if( ++j == type_max )
@@ -155,6 +157,7 @@ force_field::read_force_field( FILE *source ){
                     break;
            }
         }
+        iss.clear();
     }
     free( line );					// Free line that is implicitly allocated.
 }
