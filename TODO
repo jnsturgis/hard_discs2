@@ -1,58 +1,7 @@
-Things to fix and sort out the version on Github (in no particular order)...
-1. Arrange for doxygen to produce decent documentation. Now produces documentation needs to be improved (JS)
-2. Improve error checking while reading files (issue #2 comment handling JPD).
-3. Integrate non-rectangular areas without periodic conditions. (issue #1 JS)
-4. Check command line handling is OK and all programmes work (before closing issue #6)
-5. Include test suite (JS)
-6. What goes to logfile? and perhaps control of verbosity (issue #5) (JS)
-7. Forcefield from file (issue #4 - check resolved) (JS)
-8. Topology from file (issue #3) (JS)
-9. Use a makefile to build it all in the root directory... See below
-10 I do not like the boost library!!!
 
-===================================================
+Things that should be sorted out and ideas... not put into the issues on github.
 
-9. Recursive make of the suite, documentation and tests
-
-Make in subfolders as necessary different possible targets.
-	documentation	*** (DONE) just the documentation 
-	install		*** install the binaries in a sensible place (~/bin)
-	all		*** (DONE) binaries and documentation (default)
-	clean		*** (DONE) remove most files
-	dist-clean	*** remove even more files (including config)
-	config		*** check dependencies etc
-	test		*** run tests and produce report
-
-Add documentation to makefiles...
-
-====================================================
-
-1. Documentation improvements with doxygen
-
-First page with some nice stuff on it
-The various programmes in the suite and their usage (User manual).
-The different files and their formats. (Users manual).
-
-Slowly getting there with markdown files carcass is there 'just' need
-to flesh it out...
-
-====================================================
-
-makeconfig fails with unhelpful error messages, and now requires output file rather
-than sending to stdout... also all parameters need to be named where previous version just took
-list of object numbers. NOT BACKWARD COMPATIBLE new strange syntax.
-
-Is this fixable? Make usage appear in the documentation...
-POSIX recommendations...
-1> No options EXCEPT -o outfile_name
-2> required ordered parameters x_size y_size n_type1...
-
-implementing this SHOULD only modify makeconfig.cpp is the problem with the use of boost libraries.
-
-Branch: Fix_makeconfig
-Try to include old style usage,
-With optional parameters for forcefield and topology load from file or defaults.
-
-====================================================
+Issue#17 - closed but not merged get map2eps working and adjust map2eps and 2DOrder to take define
+a maximum dx/dy/dr for calculation and plotting.
 
 

@@ -1,0 +1,20 @@
+# A commented toppology file that should still be valid.
+# Part 1. the atom descriptions
+4                        # The number of atom types 0..3
+GpA    1                 # Name and radius
+ErbB2  2
+LH2    0.5
+CC     0.5
+# Part 2. the molecular descriptions
+2                        # The number of molecules
+Disk			 # Start of molecule 0 called Disk
+1
+0 0.0 0.0 Red
+Square                   # Start of molecule 1 called Square
+4                        # Number of Atoms
+2 -0.5 -0.5 Green        # Atom type, position x & y and color
+2 -0.5  0.5 Blue
+3  0.5  0.5 Orange
+3  0.5 -0.5 Red
+# The end of the file is here
+

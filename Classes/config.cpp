@@ -165,10 +165,6 @@ config::config_read(std::istream& ff){
         delete my_obj;
         iss.clear();
     }
-    if( my_getline(ff, &line )){			// Should be at end of file
-        throw runtime_error("Configuration ends before file.\n");
-    }
-
     unchanged = false;                          // Set up so will calculate energy.
     saved_energy = 0.0;
     the_topology = (topology *)NULL;            // Topologies are not included

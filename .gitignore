@@ -48,6 +48,8 @@ config2eps/config2eps
 
 analysis/pcf
 analysis/wrap
+analysis/2DOrder
+analysis/map2eps
 
 test/config_test
 test/polygon_test
