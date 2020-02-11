@@ -27,6 +27,5 @@ Usage: 2DOrder [-v] [-z] [-o map_file] [-d dist] [-r rotation][-t type1] [-u typ
 * -u type2 look at distances between objects of this type and type1 (default 0),
 * file1... series of configuration or trajectory files to read, if none are given use stdin.
 
-Usage: wrap [-v][-t topology] < input.config > output.config
 
 

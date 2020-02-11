@@ -792,14 +792,12 @@ WARN_LOGFILE           =
 
 INPUT                  = \
                 ../README.md             \
-                ../Classes/config.md     \
-                ../Classes/topology.md   \
-                ../Classes/force_field.md \
                 ../makeconfig            \
                 ../shrinkconfig          \
-                ../config2eps            \
                 ../NVT                   \
                 ../analysis              \
+                ../config2eps            \
+                ../Classes/files.md     \
                 ../test                  \
                 ../Classes               \
                 ../Libraries             
@@ -938,7 +936,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = 
+IMAGE_PATH             = /home/james/src/2D_Monte_Carlo/v0_cc/Images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -994,7 +992,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = 
+USE_MDFILE_AS_MAINPAGE = README.md
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing

@@ -4,4 +4,19 @@ Things that should be sorted out and ideas... not put into the issues on github.
 Issue#17 - closed but not merged get map2eps working and adjust map2eps and 2DOrder to take define
 a maximum dx/dy/dr for calculation and plotting.
 
+Documentation... 
+part1 from the .md files a user manual
+part2 from the other files a programmers manual
+======
 
+Title page needs at least a nice figure or 2 produced by the suite.
+
+=====
+Part1
+=====
+A> General description. (README.md) OK
+B> Configuration manipulation programs (makeconfig.md) OK
+C> Monte-carlo integration programs (NVT.md)
+D> Analysis programs (analysis.md)
+E> Display and graphing programs and routines (config2eps.md)
+F> File formats (config.md) OK
