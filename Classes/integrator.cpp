@@ -121,3 +121,8 @@ integrator::run(config **state_h, double beta, double P, int n_steps){
     *state_h = the_state;
     return n_step;
 }
+
+int integrator::report(std::ostream& dest){
+    dest << "Moves " << n_good << " in " << n_good+n_bad << " successful, Dist_max = " << dl_max << "\n\n";
+    return true; 
+}

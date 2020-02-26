@@ -374,6 +374,15 @@ int config::write(std::ostream& dest){
     return EXIT_SUCCESS;                    // Return all well
 }
 
+int config::report( std::ostream& dest, force_field *the_forces ){
+    double U1 = this->energy(the_forces);
+    double V1 = this->area();
+    int    N1 = this->n_objects();
+
+    dest << "N = " << N1 << "Area = " << V1 << ", Energy = " << U1 << "\n";
+	return true;
+}
+
 /**
  * @return The number of objects found in the configuration.
  */

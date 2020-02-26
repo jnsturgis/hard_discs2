@@ -240,6 +240,16 @@ gsave             % scaling page
 newpath 
 0.005 UL          % set standard line width 
 LTb               % set line color, width and dash. 
+				  % Draw 143 colour boxes in 4 columns and 36 rows with names
+0 1 4 {			  % Start column loop
+ /Col swap def
+ 0 1 36 {		  % Start row loop
+ /Row swap def
+ Col 4 mul Row 0.7 mul moveto
+ newpath 0 0 rmoveto
+ 
+ } for			  % End row loop
+} for			  % End column loop
 
 0 0 moveto
 100 0 lineto

@@ -96,7 +96,8 @@ public:
     int         		write(FILE *dest);  ///< Write the conformation to a 'c' file.
     void        		ps_atoms(std::ostream& dest
                                );   ///< Write the postscript part for the atoms.
-
+    int					report(std::ostream& dest, force_field *the_forces
+    							);  ///< Write a report to the log.
 /* Setting up a configuration */
     void      			add_topology(topology *a_topology
                                  ); ///< Attach a topology to the configuration

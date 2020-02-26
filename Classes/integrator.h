@@ -32,6 +32,8 @@ public:
     integrator(force_field *the_forces);    ///< Constructor with force field
     integrator(const integrator& orig);     ///< Constructor with copy
     virtual ~integrator();                  ///< Destructor
+    int		report(std::ostream& dest);     ///< Write a report to the log.
+
     int     run(config **state_handle, double beta,
                 double P, int n_step);      ///< Run n_step integration steps
     int     n_good;                         ///< Integrator tally, number of accepted moves.

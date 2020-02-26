@@ -91,250 +91,51 @@ usage(int val){
  *
  */
 int main(int argc, char** argv) {
-    
-    // Use c++ string
-    string       in_name;
-    string       out_name;
-    string       force_name;
-    string       log_name;
-    string       topo_name;
-    string	 traj_name;
-
-    // Objects in headers
+    // These are set up during command line handling.
     config      *current_state = NULL;
-    config      **state_h = NULL;
-
     force_field *the_forces = NULL; 
-    integrator  *the_integrator = NULL;
     topology    *a_topology = NULL;
 
+    integrator  *the_integrator = NULL;
     int         N1;
-    double      U1, V1;
+    double      U1;
     int         i, step;
-    int         c;
-    bool	verbose  = false;
-    bool	periodic = false;
-
-    int         it_max = 0;
-    int         n_print = 0;
-    int		traj_freq = 0;		// Frequency for saving frames to trajectory (0=never)
-    double      beta = 1.0;
     double      dl_max = 1.0;
-    double      pressure = 1.0;
 
     // Initialization
-
     srand((long)&argv[0]);
 
-    // Handle command line
-    while( ( c = getopt (argc, argv, "vpc:f:t:o:l:n:s:") ) != -1 )
-    {
-        switch(c)
-        {
-            case 'v': verbose  = true; break;
-            case 'p': periodic = true; break;
-            case 'c': if (optarg) in_name = optarg;
-                break;
-            case 'l': if (optarg) log_name = optarg;
-                break;
-            case 'f': if (optarg) force_name = optarg;
-                break;
-            case 't': if (optarg) topo_name = optarg;
-                break;
-            case 'o': if (optarg) out_name = optarg;
-                break;
-            case 'n': if (optarg) traj_freq = std::atoi(optarg);
-                break;
-            case 's': if (optarg) traj_name = optarg;
-                break;
-            case 'h': usage(EXIT_SUCCESS);
-            case '?':				// Something wrong.
-                if (optopt == 'c' or optopt == 'f' or optopt == 't' or 
-                    optopt == 'o' or optopt == 'l' or optopt == 'n' or
-                    optopt == 's' ){
-                    std::cerr << "The -" << optopt << " option is missing a parameter!\n";
-                } else {
-                    std::cerr << "Unknown option " << optopt << "!\n";
-                }
-            default :                           // Something very wrong.
-                usage(EXIT_FAILURE);
-        }
-    }
+    #define	NVT
+    #include    "command_line.cpp"
 
-    std::ofstream log_file;
-    #define logger ((log_file.is_open())? log_file : std::cout )
-    if( log_name.length() > 0 ){
-       log_file.open( log_name, std::ofstream::out );
-    }
+    // Report on initial status
 
-    if( verbose ) logger << "Verbose flag set\n";
-    if(( log_name.length() > 0 ) && verbose ) logger << "opened " << log_name << "as logfile.";
-
-    if(( argc - optind ) != 4 ){	        // Check enough parameters
-        std::cerr << "Not right number of parameters!\n";
-        usage(EXIT_FAILURE);
-    }
-
-    it_max   = std::atoi( argv[ optind++ ] );	// Find size for configuration
-    n_print  = std::atoi( argv[ optind++ ] );
-    beta     = std::atof( argv[ optind++ ] );
-    pressure = std::atof( argv[ optind++ ] );
-
-    if(it_max <= 0 ){
-        std::cerr << "Nothing to do, number of steps invalid.\n";
-	usage(EXIT_FAILURE);
-    }
-    if(n_print <= 0 ){
-        std::cerr << "Negative or zero print frequency invalid.\n";
-	usage(EXIT_FAILURE);
-    }
-    if( beta < 0 ){
-        std::cerr << "Negative temperature invalid.\n";
-	usage(EXIT_FAILURE);
-    }
-    if( pressure < 0 ){
-        std::cerr << "Negative pressure invalid.\n";
-	usage(EXIT_FAILURE);
-    }
-
-    if( verbose ) logger << "Reading configuration.\n";
-    try{
-        if( in_name.length() > 0 ){
-            current_state = new config(in_name);
-        } else {
-            current_state = new config(std::cin);
-        }
-    }
-    catch(...){
-        std::cerr << "Error reading configuration aborting.\n";
-        if( current_state ) delete current_state;
-        exit( EXIT_FAILURE );
-    }
-    if( verbose ) logger << "Read configuration successfully.\n";
-
-    // Load the force field from the force field file
-    if( force_name.length() == 0 ){
-        std::cerr << "Error the force field file was required but was not declared. Aborting.\n";
-        if( current_state ) delete current_state;
-        exit( EXIT_FAILURE );
-    }
-
-    if( verbose ) logger << "Reading force field from " << force_name << ".\n";
-    try{
-        the_forces = new force_field(force_name.c_str());
-    }
-    catch(...){
-        std::cerr << "Error reading force field. Aborting.\n";
-        delete current_state;
-        if( the_forces ) delete the_forces;
-        exit( EXIT_FAILURE );
-    }
-    if( verbose ){
-        logger << "Read force_field successfully.\n";
-        logger << "==============================\n";
-        the_forces->write(logger);
-        logger << "==============================\n";
-    }
-    // Load the topology from the topology file
-    if( topo_name.length() == 0 ){
-        std::cerr << "Error the topology file is required but was not declared. Aborting.\n";
-        delete current_state;
-        delete the_forces;
-        exit( EXIT_FAILURE );
-    }
-
-    if( verbose ) logger << "Reading topology from" << topo_name << ".\n";
-    try{
-        a_topology = new topology(topo_name.c_str());
-    }
-    catch(...){
-        logger << "Error reading topology. Aborting.\n";
-        delete current_state;
-        delete the_forces;
-        if( a_topology ) delete a_topology;
-        exit( EXIT_FAILURE );
-    }
-    if( verbose ){
-        logger << "Read topology file successfully.\n";
-        logger << "==============================\n";
-        a_topology->write(logger);
-        logger << "==============================\n";
-    }
-
-    // Setup to save trajectory
-    ogzstream	traj_stream;
-
-    if( traj_freq > 0 ){
-        if( traj_name.length() == 0 ){
-            std::cerr << "You must specify a file name for saving a trajectory (-s option)\n";
-            delete current_state;
-            delete the_forces;
-            delete a_topology;
-            exit( EXIT_FAILURE );
-        }
-        logger << "Snap shots saved every " << traj_freq << " steps\n";
-        traj_stream.open( traj_name.c_str() );
-        if( ! traj_stream.good() ){
-            std::cerr << "Error while opening file " << traj_name << " for the trajectory.\n";
-            delete current_state;
-            delete the_forces;
-            delete a_topology;
-            exit( EXIT_FAILURE );
-        }
-        if( verbose ){
-            logger << traj_name << " opened for the trajectory.\n";
-        }
-    } else {
-        traj_freq = it_max + 1;					// Don't want a trajectory
-    }
-
-    // Add the topology to the configuration.
-    current_state->add_topology(a_topology);
-
-    if( current_state->is_rectangle ){
-        current_state->is_periodic = periodic;
-    } else if( periodic ){					/// TODO convert parallelogram to rectangle
-        if( current_state->poly->is_parallelogram() ){
-            if( current_state->poly_2_rect() ){
-                current_state->is_periodic = periodic;
-            }
-        }
-        if( ! current_state->is_rectangle ){
-            std::cerr << "Periodic conditions for non-rectangular configurations not supported - ignoring flag\n";
-        }
-    }
-    
-    U1 = current_state->energy(the_forces);
-    V1 = current_state->area();
-    N1 = current_state->n_objects();
-
-    // Print report of state, both in terminal and log
-    logger << "After" << std::to_string( 0 ) << " steps...\n";
-    logger << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % pressure % beta;
-    logger << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
-
-    dl_max = simple_min(current_state->width(), current_state->height())/2.0;
+    i = 0;          // Counter for number of shifts.
+    logger << "After " << i << " steps , P = " << pressure << ", beta = " << beta << "\n"; 
+    current_state->report(logger, the_forces);
 
     // Jiggle everything to remove bad contacts from save/load
-    i = 0;          // Counter for number of shifts.
+    dl_max = 0.5;   // Only small shifts if any needed.
+
+    U1 = current_state->energy(the_forces);
+    N1 = current_state->n_objects();
+
     if((U1 > the_forces->big_energy) && verbose ){
         logger << "Jiggle is necessary.\n";
     } else {
         logger << "No jiggle is necessary.\n";
     }
     
-    i = 0;
-
     while(U1 > the_forces->big_energy){
         if( the_integrator ) delete the_integrator;
-        if( i > 2000*N1 ){
+        if( i > 2000*N1){
             delete the_forces;
             delete current_state;
             fatal_error("Unable to adjust initial configuration in %d steps", i );
         }
         the_integrator = new integrator(the_forces);
         the_integrator->dl_max = dl_max;
-        state_h = &current_state;
+        config **state_h = &current_state;
         the_integrator->run(state_h, beta, pressure, 2*N1);
         current_state = *state_h;
         dl_max = the_integrator->dl_max;
@@ -343,20 +144,22 @@ int main(int argc, char** argv) {
         U1 = current_state->energy(the_forces);
         if( verbose ){
             logger << "after" << std::to_string( i ) << " steps\n";
-            logger << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % pressure % beta;
-            logger << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+            current_state->report(logger, the_forces);
         }
     }
 
+    // If appropriate report on new initial condition
     if( the_integrator ){
         delete the_integrator;
         i = 0;
         logger << "After initial adjustments:\n";
-        logger << format("N objects = %9d Pressure = %9g   Beta = %9g\n") % N1 % pressure % beta;
-        logger << format("Area      = %9g  Density = %9g Energy = %9g\n\n") % V1 % (N1/V1) % U1;
+        current_state->report(logger, the_forces);
     }
 
     // Start NVT montecarlo loop
+
+    dl_max = simple_min(current_state->width(), current_state->height())/2.0;
+
     // Calculate next step size...
     step = simple_min(n_print,it_max);
     step = simple_min(step, traj_freq);
@@ -370,32 +173,23 @@ int main(int argc, char** argv) {
     }
 
     for(i=0;i<it_max;){
-
-        state_h = &current_state;
+ 
+         /** This part should be isolated for parallelization  **/
+        config **state_h = &current_state;
         the_integrator->run(state_h, beta, pressure, step);
         current_state = *state_h;
-
-        U1 = current_state->energy(the_forces);
-        V1 = current_state->area();
-        N1 = current_state->n_objects();
-
-        i += step;
-
-        if( i%n_print == 0 ){				// Is it time to print to the log file
-            logger << format("After %d steps N = %d, P = %g, beta = %g\n") 
-                % i % N1 % pressure % beta;
-            logger << format("Area = %g, Density = %g Energy = %g\n") 
-                % V1 % (N1/V1) % U1;
-            logger << format("Moves %d in %d, Dist_max = %g\n\n") 
-                % (the_integrator->n_good)
-                % (the_integrator->n_good + the_integrator->n_bad)
-                % (the_integrator->dl_max);
+        int j = i + step;
+        if( j%n_print == 0 ){				// Is it time to print to the log file
+            logger << "After " << i << " steps , P = " << pressure << ", beta = " << beta << "\n"; 
+            current_state->report(logger, the_forces);
+            the_integrator->report(logger);
         }
-        if( i%traj_freq == 0 ){				// Is it time to print to the trajectory
+        if( j%traj_freq == 0 ){				// Is it time to print to the trajectory
             traj_stream << "====" << i << "====\n";
             current_state->write( traj_stream );
         }
-        
+        /** End of internal part **/
+        i += step;
         step = simple_min(it_max-i+1,(n_print - (i%n_print)));
         step = simple_min(step,(traj_freq - (i%traj_freq)));
     }

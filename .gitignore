@@ -42,6 +42,7 @@ Bug_reports/
 # Executables for this project
 
 NVT/NVT
+NVT/RX
 makeconfig/makeconfig
 shrinkconfig/shrinkconfig
 config2eps/config2eps
