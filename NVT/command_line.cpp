@@ -78,12 +78,12 @@
     int		n_replica = 1;		// Default number of replicas.
     #endif
 
-    string       in_name;
-    string       out_name;
-    string       force_name;
-    string       log_name;
-    string       topo_name;
-    string	 traj_name;
+    string	in_name;
+    string	out_name;
+    string	force_name;
+    string	log_name;
+    string	topo_name;
+    string	traj_name;
 
     while( ( c = getopt (argc, argv, ARGSTRING) ) != -1 )
     {
@@ -107,6 +107,7 @@
                 break;
 #ifdef RX
             case 'r': if (optarg) n_replica = std::atoi(optarg);
+            	break;
 #endif
             case 'h': usage(EXIT_SUCCESS);
             case '?':				// Something wrong.

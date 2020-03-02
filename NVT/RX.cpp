@@ -21,6 +21,7 @@ namespace fs = boost::filesystem;
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <algorithm>
 #include "../Classes/integrator.h"
 #include "../Classes/common.h"
 
@@ -51,9 +52,9 @@ make_name( string root, int index )
 	
 	assert(index<1000);			// Feature no more than 999 replicas
 	
-	ss << p.stem() << p.filename();
+	ss << p.stem().c_str();
 	ss << std::setw(3) << std::setfill('0') << index;
-	ss << "." << p.extension();
+	ss << p.extension().c_str();
 	
     std::string s = ss.str();
 	return s;
@@ -78,7 +79,7 @@ int main(int argc, char** argv) {
 #include "command_line.cpp"
 
     i = 0;          // Counter for number of shifts.
-    logger << "After " << i << " steps , P = " << pressure << ", beta = " << beta << "\n"; 
+    logger << "After " << i << " steps, P = " << pressure << ", beta = " << beta << "\n"; 
     current_state->report(logger, the_forces);
 
     // Jiggle everything to remove bad contacts from save/load
@@ -145,6 +146,10 @@ int main(int argc, char** argv) {
         handles[i]     = &states[i];
         integrators[i] = new integrator( the_forces );
 
+        if(verbose){
+        	logger << "Copied configuration " << i << ", beta =" << betas[i] << "\n";
+        }
+        
         if( traj_freq > 0 ){
             traj_streams[i].open( make_name(traj_name, i ).c_str() );
             if( verbose ){
@@ -153,12 +158,12 @@ int main(int argc, char** argv) {
         }
 
        if( log_name.length() > 0 ){
-           logs[i].open( make_name(log_name, i), std::ofstream::out );
-            if( verbose ){
-                logger << make_name(log_name, i ) << " opened for replica log.\n";
-            }
+       		log_name = "toto.log";
        }
-
+       logs[i].open( make_name(log_name, i), std::ofstream::out );
+       if( verbose ){
+            logger << make_name(log_name, i ) << " opened for replica log.\n";
+       }
     }
 
     if( traj_freq <= 0 ) traj_freq = it_max + 1;
@@ -177,25 +182,23 @@ int main(int argc, char** argv) {
     }
 
     for(i=0;i<it_max;){
-
 		for( int r=0; r<n_replica; r++ ){		// Launch threads
-            /* replicas[r] = new thread( integrators[j]->run, handles[r], betas[r], pressure, step); */
          	/** This part should be parallelized  **/
-        	handles[r] = &states[i];
-        	the_integrator->run(handles[r], betas[r], pressure, step);
+        	handles[r] = &states[r];
+        	integrators[r]->run(handles[r], betas[r], pressure, step);
         	states[r] = *handles[r];
+
         	int j = i + step;
         	if( j%n_print == 0 ){				// Is it time to print to the log file
-            	logs[r] << "After " << i << " steps , P = " << pressure << ", beta = " << betas[r] << "\n"; 
-            	current_state->report(logs[r], the_forces);
-        	    the_integrator->report(logs[r]);
+            	logs[r] << "After " << j << " steps, P = " << pressure << ", beta = " << betas[r] << "\n"; 
+            	states[r]->report(logs[r], the_forces);
+        	    integrators[r]->report(logs[r]);
     	    }
 			if( j%traj_freq == 0 ){				// Is it time to print to the trajectory
-            	traj_streams[r] << "====" << i << "====\n";
+            	traj_streams[r] << "====" << j << "====\n";
         	    states[r]->write( traj_streams[r] );
     	    }
     	    energies[r] = states[r]->energy(the_forces);
-    	    
 	        /** End of parallel internal part **/
         }
 
@@ -234,14 +237,17 @@ int main(int argc, char** argv) {
     }
 
 /// TODO: Tidy up everything...
-    // delete the multiple integrators
-    // close the multiple trajectories
     /*
     if( traj_stream.good() ){				// If we are writing a trajectory
         traj_stream.close();				// Close the file
     }
     */
 
+    for(int i=0; i < n_replica; i++ ){
+    	delete	states[i];
+		delete	integrators[i];
+    }
+    
     if( verbose ) logger << "Writing final coldest configuration.\n";
     if( out_name.length() > 0 ){
         std::ofstream out_file(out_name);
