@@ -143,7 +143,7 @@
        log_file.open( log_name, std::ofstream::out );
     }
 
-    if( verbose ) logger << "Verbose flag set\n";
+    if( verbose ) std::cerr << "Verbose flag set\n";
     if(( log_name.length() > 0 ) && verbose ) logger << "opened " << log_name << "as logfile.";
 
     if(it_max <= 0 ){
@@ -163,7 +163,7 @@
 	usage(EXIT_FAILURE);
     }
 
-    if( verbose ) logger << "Reading configuration.\n";
+    if( verbose ) std::cerr << "Reading configuration.\n";
     try{
         if( in_name.length() > 0 ){
             current_state = new config(in_name);
@@ -176,7 +176,7 @@
         if( current_state ) delete current_state;
         exit( EXIT_FAILURE );
     }
-    if( verbose ) logger << "Read configuration successfully.\n";
+    if( verbose ) std::cerr << "Read configuration successfully.\n";
 
     // Load the force field from the force field file
     if( force_name.length() == 0 ){
@@ -185,7 +185,7 @@
         exit( EXIT_FAILURE );
     }
 
-    if( verbose ) logger << "Reading force field from " << force_name << ".\n";
+    if( verbose ) std::cerr << "Reading force field from " << force_name << ".\n";
     try{
         the_forces = new force_field(force_name.c_str());
     }
@@ -196,10 +196,10 @@
         exit( EXIT_FAILURE );
     }
     if( verbose ){
-        logger << "Read force_field successfully.\n";
-        logger << "==============================\n";
-        the_forces->write(logger);
-        logger << "==============================\n";
+        std::cerr << "Read force_field successfully.\n";
+        std::cerr << "==============================\n";
+        the_forces->write(std::cerr);
+        std::cerr << "==============================\n";
     }
     // Load the topology from the topology file
     if( topo_name.length() == 0 ){
@@ -209,22 +209,22 @@
         exit( EXIT_FAILURE );
     }
 
-    if( verbose ) logger << "Reading topology from" << topo_name << ".\n";
+    if( verbose ) std::cerr << "Reading topology from" << topo_name << ".\n";
     try{
         a_topology = new topology(topo_name.c_str());
     }
     catch(...){
-        logger << "Error reading topology. Aborting.\n";
+        std::cerr << "Error reading topology. Aborting.\n";
         delete current_state;
         delete the_forces;
         if( a_topology ) delete a_topology;
         exit( EXIT_FAILURE );
     }
     if( verbose ){
-        logger << "Read topology file successfully.\n";
-        logger << "==============================\n";
-        a_topology->write(logger);
-        logger << "==============================\n";
+        std::cerr << "Read topology file successfully.\n";
+        std::cerr << "==============================\n";
+        a_topology->write(std::cerr);
+        std::cerr << "==============================\n";
     }
 
     // Setup to save trajectory
@@ -252,7 +252,7 @@
             exit( EXIT_FAILURE );
         }
         if( verbose ){
-            logger << traj_name << " opened for the trajectory.\n";
+            std::cerr << traj_name << " opened for the trajectory.\n";
         }
     } else {
         traj_freq = it_max + 1;					// Don't want a trajectory
