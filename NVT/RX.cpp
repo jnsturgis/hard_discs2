@@ -255,9 +255,10 @@ int main(int argc, char** argv) {
 		if( i%BETA_ADJUST == 0){
 			logger  << "At step " << i <<". Made " << exchange_count << " out of " << exchange_max << " swaps\n";
 			std::vector<double>	c(n_replica);	// Serial set of spring compliances algorithm
+			double	factor = (n_replica - 1.0)/ exchange_count;
 			c[0] = 1.0;
  			for(int r=1; r<n_replica; r++){
-				c[r]   = c[r-1]+(swaps[r-1]+0.2)*2.0*(n_replica-1)/exchange_count;
+				c[r]   = c[r-1]+(swaps[r-1]+0.2)*factor;
 			}
  			for(int r=0; r<n_replica; r++){
 				data[order[r]].the_beta = c[r] * beta / c[n_replica - 1];
