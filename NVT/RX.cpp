@@ -53,7 +53,7 @@ typedef struct {
 } rep_data;
 
 #define EXCHANGE_FREQ	( 20 * current_state->n_objects())
-#define BETA_ADJUST		( 20 * EXCHANGE_FREQ)
+#define BETA_ADJUST		( 100 * EXCHANGE_FREQ)
 #define swap( type, one, two )	{type s = one; one = two; two = s; }
 
 void
@@ -166,17 +166,18 @@ int main(int argc, char** argv) {
     std::vector<int>			swaps(n_replica);		// Counters for exchanges between temperatures.
     std::vector<thread>         replicas;
     std::vector<rep_data>		data(n_replica);
-
+	std::vector<double>			cs(n_replica);	// Serial set of spring compliances algorithm
+	double						c_sum = 0.0;
     // Should have some error handling in this section...
     // Set up the different replicas
 
     for(int i=0; i < n_replica; i++ ){
         order[i]       			= i;
-        data[i].the_beta		= beta * (i+1) / n_replica;
 		data[i].the_pressure	= pressure;
         data[i].the_config		= new config( current_state );
         data[i].the_integrator	= new integrator( the_forces );
-
+		cs[i] = 1.0;
+		c_sum += cs[i];
         if(verbose){
         	std::cerr << "Copied configuration " << i << ", beta =" << data[i].the_beta << "\n";
         }
@@ -197,6 +198,13 @@ int main(int argc, char** argv) {
        }
     }
 
+    // Set up beta values using c[i] array and c_sum
+    double	cumul = 0.0;
+	for( int r=0; r<n_replica; r++ ){
+        cumul += cs[r];
+		data[r].the_beta = cumul * beta / c_sum;
+	}
+
     if( traj_freq <= 0 ) traj_freq = it_max + 1;
     dl_max = simple_min(current_state->width(), current_state->height())/2.0;
 
@@ -205,7 +213,6 @@ int main(int argc, char** argv) {
     step = simple_min(step, traj_freq);
     step = simple_min(step,EXCHANGE_FREQ);
 
-    // Loop until number of steps done...
     if( verbose ){
         std::cerr << "With" << (current_state->is_periodic?" ":"out ") << "periodic boundary conditions.\n";
         std::cerr << "Boundary is " << (current_state->is_rectangle ? "rectangle" : "polygon") << "\n";
@@ -215,6 +222,7 @@ int main(int argc, char** argv) {
     int exchange_count = 0;
     int exchange_max   = 0;
         
+    // Loop until number of steps done...
     for(i=0;i<it_max;){
 		for( int r=0; r<n_replica; r++ ){		// Launch threads
          	/** This part should be parallelized  **/
@@ -254,15 +262,19 @@ int main(int argc, char** argv) {
         }
 		if( i%BETA_ADJUST == 0){
 			logger  << "At step " << i <<". Made " << exchange_count << " out of " << exchange_max << " swaps\n";
-			std::vector<double>	c(n_replica);	// Serial set of spring compliances algorithm
-			double	factor = (n_replica - 1.0)/ exchange_count;
-			c[0] = 1.0;
+			double	factor = (n_replica - 1.0)/ (exchange_count+1.0);
+
+			c_sum = cs[0];
  			for(int r=1; r<n_replica; r++){
-				c[r]   = c[r-1]+(swaps[r-1]+0.2)*factor;
+				cs[r]   *= (swaps[r-1]+0.2)*factor;
+                c_sum  += cs[r];
 			}
+			cumul = 0.0;
  			for(int r=0; r<n_replica; r++){
-				data[order[r]].the_beta = c[r] * beta / c[n_replica - 1];
+				cumul += cs[r];
+				data[order[r]].the_beta = cumul * beta / c_sum;
             }
+
 			exchange_count = 0;
 			exchange_max   = 0;
  			for(int r=0; r<n_replica; r++){
