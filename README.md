@@ -1,4 +1,26 @@
 # General descirption of program suite {#general}
+<!--
+   =======================
+
+          Title page
+ needs at least a nice figure 
+  or 2 produced by the suite.
+
+   =======================
+      Part1 User manual
+   =======================
+A> General description. (README.md) OK
+B> Configuration manipulation programs (makeconfig.md) OK
+C> Monte-carlo integration programs (NVT.md)
+D> Analysis programs (analysis.md)
+E> Display and graphing programs and routines (config2eps.md)
+F> File formats (config.md) OK
+   ========================
+   Part2 Maintenance manual
+   ========================
+Files, classes dependencies etc.
+
+-->
 
 The **2D_Monte_Carlo** suite of programmes desribed here are designed to provide a simple system
 for investigating very coarse grained models of membrane proteins. The programmes

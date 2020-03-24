@@ -204,6 +204,12 @@ int main(int argc, char** argv) {
         cumul += cs[r];
 		data[r].the_beta = cumul * beta / c_sum;
 	}
+	
+	logger << "Betas adjusted to :";
+ 	for(int r=0; r<n_replica; r++){
+		logger << data[order[r]].the_beta << ",";
+	}
+	logger << "\n";
 
     if( traj_freq <= 0 ) traj_freq = it_max + 1;
     dl_max = simple_min(current_state->width(), current_state->height())/2.0;
@@ -262,7 +268,7 @@ int main(int argc, char** argv) {
         }
 		if( i%BETA_ADJUST == 0){
 			logger  << "At step " << i <<". Made " << exchange_count << " out of " << exchange_max << " swaps\n";
-			double	factor = (n_replica - 1.0)/ (exchange_count+1.0);
+			double	factor = (n_replica - 1.0)/ (exchange_count+0.2*(n_replica - 1.0));
 
 			c_sum = cs[0];
  			for(int r=1; r<n_replica; r++){
@@ -275,17 +281,15 @@ int main(int argc, char** argv) {
 				data[order[r]].the_beta = cumul * beta / c_sum;
             }
 
-			exchange_count = 0;
-			exchange_max   = 0;
- 			for(int r=0; r<n_replica; r++){
-				logger << "swaps [" << r << "] = " << swaps[r] << "\n";
-				swaps[r] = 0;
-			}
+ 			for(int r=0; r<n_replica; r++) logger << "swaps [" << r << "] = " << swaps[r] << "\n";
+
 			logger << "Betas adjusted to :";
- 			for(int r=0; r<n_replica; r++){
-				logger << data[order[r]].the_beta << ",";
-			}
+ 			for(int r=0; r<n_replica; r++) logger << data[order[r]].the_beta << ",";
 			logger << "\n";
+
+			exchange_count /= 4;
+			exchange_max   /= 4;
+ 			for(int r=0; r<n_replica; r++) swaps[r] /= 4;
     	}
 		step = simple_min(it_max-i+1,(n_print - (i%n_print)));
         step = simple_min(step,(traj_freq - (i%traj_freq)));
