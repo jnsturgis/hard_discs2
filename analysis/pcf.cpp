@@ -21,8 +21,9 @@ using namespace std;
 double get_random(double low, double high)		// Return a random number uniformly
 {							// distributed between [low and high]
     static std::default_random_engine e;                // Appears to work.
-    static std::uniform_real_distribution<> dis(low, high);
-    return dis(e);
+    static std::uniform_real_distribution<> dis(0.0, 1.0);
+    double r = dis(e);
+    return low + (high-low) * r;
 }
 
 void
